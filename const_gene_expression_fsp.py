@@ -1,35 +1,16 @@
 from pypacmensl.sensitivity.multi_sinks import SensFspSolverMultiSinks
 import mpi4py.MPI as mpi
 import numpy as np
-import numpy.linalg as LA
-import matplotlib.pyplot as plt
-from scipy.stats import binom, poisson, norm
-from scipy.special import comb
-from math import exp, log, sqrt
-from matplotlib.patches import Ellipse
-from numba import jit
-from matplotlib.ticker import FormatStrFormatter
 
+k_off = 0.15
+k_on = 0.05
+k_r = 5.0
+gamma = 0.05
 
-comm = mpi.COMM_WORLD
-rank = comm.rank
-print(comm.Get_size())
-print(rank)
-
-# %% Model
-k_off = 0.5
-k_on = 0.1
-k_r = 50.0
-gamma = 1.0
 theta = np.array([k_off, k_on, k_r, gamma])
 
-n_cells = 1000
-n_t = 100
-t_meas = np.linspace(1, 10, n_t)
-
-
 SM = [[-1, 1, 0], [1, -1, 0], [0, 0, 1], [0, 0, -1]]
-X0 = [[2, 0, 0]]
+X0 = [[1, 0, 0]]
 P0 = [1.0]
 S0 = [0.0]
 
@@ -66,9 +47,10 @@ def prop_x(reaction, X, out):
         return None
 
 
-init_bounds = np.array([2, 2, 100])
+init_bounds = np.array([1, 1, 20])
+t_meas = np.linspace(0, 2*60, 121)
 
-# %%
+comm = mpi.COMM_SELF
 solver = SensFspSolverMultiSinks(comm)
 solver.SetModel(np.array(SM), prop_t, prop_x, dprop_t_list, [prop_x] * 4, dprop_sparsity)
 solver.SetVerbosity(2)
@@ -76,20 +58,14 @@ solver.SetFspShape(constr_fun=None, constr_bound=init_bounds)
 solver.SetInitialDist(np.array(X0), np.array(P0), [np.array(S0)] * 4)
 solutions = solver.SolveTspan(t_meas, 1.0e-4)
 
-# %%
-# Parameters for the noise models
-alpha = 0.8
-sigmax = 0.1
-mubg = 1
-sigmabg = 2
+rna_distributions = []
+rna_sensitivities = []
+for i in range(0, len(solutions)):
+    rna_distributions.append(solutions[i].Marginal(2))
+    sens_list = []
+    for iS in range(0, 4):
+        sens_list.append(solutions[i].SensMarginal(iS, 2))
+    rna_sensitivities.append(sens_list)
 
-y = np.linspace(0, 500, 100)
-sigmatot = np.sqrt(sigmax**2 + sigmabg**2)
-
-def flowcyt_weight(x, fout):
-    C = np.sqrt(2*np.pi*sigmatot*sigmatot)
-    fout[:] = np.exp(-(y[:] - alpha*x[2] - mubg)**2/(2*sigmatot*sigmatot))/C
-
-intensity_pdfs = []
-for i in range(0, n_t):
-    intensity_pdfs.append()
+np.savez('bursting_parameters.npz', kon=k_on, koff = k_off, kr= k_r, gamma=gamma)
+np.savez('fsp_solutions.npz', rna_distributions=rna_distributions, rna_sensitivities=rna_sensitivities, t_meas=t_meas, allow_pickle=True)

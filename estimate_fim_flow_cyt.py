@@ -12,13 +12,16 @@ kappa = 240
 mu_bg = 10
 sigma_bg = 20
 
+if rank == 0:
+    np.savez('flowcyt_noise_parameters.npz', kappa=kappa, mu_bg=mu_bg, sigma_bg=sigma_bg)
+
 with np.load('fsp_solutions.npz', allow_pickle=True) as data:
     rna_distributions = data['rna_distributions']
     rna_sensitivities = data['rna_sensitivities']
 nt = len(rna_distributions)
 
 # Monte Carlo estimate of the Fisher Information matrices, we assume that background noise could be accurately quantified independent of the experiment
-num_cells_flowcyt_mc = 200000
+num_cells_flowcyt_mc = 100000
 num_reps = 1
 
 dopt = []
@@ -50,7 +53,10 @@ for irep in range(0, num_reps):
             for jp in range(0, ip + 1):
                 sjp = Cmat_flowcyt(itime, rna_sensitivities[itime][jp])
                 M[ip, jp] = np.sum(sip * sjp / p)
-        M = 0.5 * (M.T + M)
+        for ip in range(0, 4):
+            for jp in range(ip + 1, 4):
+                M[ip, jp] = M[jp, ip]
+
         M = comm.allreduce(M)
         fim_flowcyt[itime, :, :] = M / num_cells_flowcyt_mc
 
