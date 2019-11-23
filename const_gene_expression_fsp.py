@@ -2,10 +2,10 @@ from pypacmensl.sensitivity.multi_sinks import SensFspSolverMultiSinks
 import mpi4py.MPI as mpi
 import numpy as np
 
-k_off = 0.15
-k_on = 0.05
-k_r = 5.0
-gamma = 0.05
+k_off = 0.005
+k_on = 0.001
+k_r = 0.5
+gamma = 0.01
 
 theta = np.array([k_off, k_on, k_r, gamma])
 
@@ -48,7 +48,7 @@ def prop_x(reaction, X, out):
 
 
 init_bounds = np.array([1, 1, 20])
-t_meas = np.linspace(0, 2*60, 121)
+t_meas = np.linspace(0, 20*60, 20*60 + 1)
 
 comm = mpi.COMM_SELF
 solver = SensFspSolverMultiSinks(comm)

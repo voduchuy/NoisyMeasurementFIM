@@ -9,8 +9,8 @@ num_procs = comm.Get_size()
 np.random.seed(rank)
 
 kappa = 240
-mu_bg = 10
-sigma_bg = 20
+mu_bg = 200
+sigma_bg = 5000
 
 if rank == 0:
     np.savez('flowcyt_noise_parameters.npz', kappa=kappa, mu_bg=mu_bg, sigma_bg=sigma_bg)
@@ -48,11 +48,12 @@ for irep in range(0, num_reps):
     for itime in range(0, nt):
         M = np.zeros((4, 4))
         p = Cmat_flowcyt(itime, rna_distributions[itime])
+        si = []
         for ip in range(0, 4):
-            sip = Cmat_flowcyt(itime, rna_sensitivities[itime][ip])
+            si.append(Cmat_flowcyt(itime, rna_sensitivities[itime][ip]))
+        for ip in range(0,4):
             for jp in range(0, ip + 1):
-                sjp = Cmat_flowcyt(itime, rna_sensitivities[itime][jp])
-                M[ip, jp] = np.sum(sip * sjp / p)
+                M[ip, jp] = np.sum(si[ip] * si[jp] / np.maximum(p*p, 1.0e-14))
         for ip in range(0, 4):
             for jp in range(ip + 1, 4):
                 M[ip, jp] = M[jp, ip]
