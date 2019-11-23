@@ -18,7 +18,7 @@ p_success = 0.5
 ncells = 100
 init_bounds = np.array([1, 1, 20])
 t_meas = np.linspace(20*60/4, 20*60, 4)
-theta0 = np.array([k_off_true, k_on_true, k_r_true, gamma_true])
+theta0 = np.array([k_on_true, k_off_true, k_r_true, gamma_true])
 SM = np.array([[-1, 1, 0], [1, -1, 0], [0, 0, 1], [0, 0, -1]])
 X0 = np.array([[1, 0, 0]])
 P0 = np.array([1.0])
@@ -184,7 +184,7 @@ if RANK == 0:
 
 # Compute fits with the incorrect likelihood function
 
-num_trials = 1
+num_trials = 10
 fits_local = np.zeros((num_trials, 4))
 
 for itrial in range(0, num_trials):
