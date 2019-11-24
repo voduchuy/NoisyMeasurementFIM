@@ -152,7 +152,7 @@ POPULATION_SIZE = 1
 
 # Compute fits with the correct likelihood function
 
-num_trials = 10
+num_trials = 50
 fits_local = np.zeros((num_trials, 4))
 
 for itrial in range(0, num_trials):
@@ -161,7 +161,7 @@ for itrial in range(0, num_trials):
     pop = pygmo.population(prob)
     pop.push_back(np.log10(theta0))
     start_range0 = 0.01
-    my_algo = pygmo.compass_search(max_fevals=1000, start_range=start_range0, stop_range=1.0E-5)
+    my_algo = pygmo.compass_search(max_fevals=2000, start_range=start_range0, stop_range=1.0E-5)
     algo = pygmo.algorithm(my_algo)
     algo.set_verbosity(1)
     pop = algo.evolve(pop)
@@ -184,7 +184,7 @@ if RANK == 0:
 
 # Compute fits with the incorrect likelihood function
 
-num_trials = 10
+num_trials = 50
 fits_local = np.zeros((num_trials, 4))
 
 for itrial in range(0, num_trials):
@@ -193,7 +193,7 @@ for itrial in range(0, num_trials):
     pop = pygmo.population(prob)
     pop.push_back(np.log10(theta0))
     start_range0 = 0.01
-    my_algo = pygmo.compass_search(max_fevals=1000, start_range=start_range0, stop_range=1.0E-5)
+    my_algo = pygmo.compass_search(max_fevals=2000, start_range=start_range0, stop_range=1.0E-5)
     algo = pygmo.algorithm(my_algo)
     algo.set_verbosity(1)
     pop = algo.evolve(pop)
