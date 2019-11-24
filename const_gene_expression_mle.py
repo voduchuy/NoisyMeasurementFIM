@@ -76,7 +76,7 @@ def solve_cme(log10_theta):
     cme_solver = FspSolverMultiSinks(mpi.COMM_SELF)
     cme_solver.SetVerbosity(0)
     cme_solver.SetModel(SM, propensity_t, propensity_x)
-    cme_solver.SetFspShape(constr_fun=None, constr_bound=init_bounds, exp_factors=np.array([0.0, 0.0, 0.0, 0.2]))
+    cme_solver.SetFspShape(constr_fun=None, constr_bound=init_bounds)
     cme_solver.SetInitialDist(X0, P0)
     cme_solver.SetUp()
     solutions = cme_solver.SolveTspan(t_meas, 1.0E-6)
