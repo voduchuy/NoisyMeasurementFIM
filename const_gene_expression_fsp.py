@@ -2,12 +2,12 @@ from pypacmensl.sensitivity.multi_sinks import SensFspSolverMultiSinks
 import mpi4py.MPI as mpi
 import numpy as np
 
-k_off = 0.005
-k_on = 0.001
+k_off = 0.001
+k_on = 0.005
 k_r = 0.5
 gamma = 0.01
 
-theta = np.array([k_off, k_on, k_r, gamma])
+theta = np.array([k_on, k_off, k_r, gamma])
 
 SM = [[-1, 1, 0], [1, -1, 0], [0, 0, 1], [0, 0, -1]]
 X0 = [[1, 0, 0]]

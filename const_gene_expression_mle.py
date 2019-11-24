@@ -10,8 +10,8 @@ RANK = mpi.COMM_WORLD.Get_rank()
 NPROCS = mpi.COMM_WORLD.Get_size()
 np.random.seed(RANK)
 
-k_off_true = 0.005
-k_on_true = 0.001
+k_off_true = 0.001
+k_on_true = 0.005
 k_r_true = 0.5
 gamma_true = 0.01
 p_success = 0.5
