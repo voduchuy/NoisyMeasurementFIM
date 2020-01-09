@@ -115,6 +115,7 @@ for ib in range(0, nblocal[0]):
         a = np.power(10.0, log10abounds[0] + ia * (log10abounds[1] - log10abounds[0]) / NA)
         b = np.power(10.0, log10bbounds[0] + (ib + ibstart[PROCID]) * (log10bbounds[1] - log10bbounds[0]) / NB)
         detFlocal[ib, ia] = computedetF(a, b)
+        print(f'Processor {PROCID} a = {a:.2e} b = {b:.2e} log10(detF) = {np.log10(detFlocal[ib, ia]):.2e} \n')
 
 detF = np.zeros((NB, NA), dtype=float)
 recvcounts = nballoc * NA
