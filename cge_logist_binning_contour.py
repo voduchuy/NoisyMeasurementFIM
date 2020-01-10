@@ -6,9 +6,7 @@ from scipy.stats import logistic
 from numba import jit
 
 import matplotlib.pyplot as plt
-import seaborn as sns
 
-sns.set(style='darkgrid')
 
 kappa = 220
 sigma_probe = 390
@@ -40,18 +38,6 @@ def intensitypointwise(y, p_x):
     return fval
 
 
-flowcyt_intensity_prob = []
-flowcyt_intensity_sens = []
-for itime in range(0, len(t_meas)):
-    xmax = len(rna_distributions[itime]) - 1
-    yrange = [mu_bg - 4 * sigma_bg, kappa * xmax + mu_bg + 4 * sigma_bg]
-    flowcyt_intensity_prob.append(chebfun(lambda y: intensitypointwise(y, rna_distributions[itime]), yrange))
-    stmp = []
-    for ip in range(0, 4):
-        stmp.append(chebfun(lambda y: intensitypointwise(y, rna_sensitivities[itime][ip]), yrange))
-    flowcyt_intensity_sens.append(stmp)
-
-
 # %%
 def computepZfrompY(pY, a, b):
     pZ = np.zeros((2,))
@@ -80,19 +66,30 @@ def computeFIMZfromY(sY, pY, a, b):
 
 
 # %%
-ABOUNDS = [1.0E-4, 1.0E3]
-BBOUNDS = kappa * [1, 100]
-NA = 1000
+ABOUNDS = 4*np.tan([np.pi/6.0, np.pi/3.0])
+ARGBOUNDS = [np.pi/6.0, 5*np.pi/12.0]
+BBOUNDS = kappa*np.array([1, 100])
+NA = 100
 NB = 100
 DT = 300
 NCELLS = 1000
 
+T_IDX = DT * np.array([1, 2, 3, 4], dtype=int)
+flowcyt_intensity_prob = []
+flowcyt_intensity_sens = []
+for itime in range(0, len(T_IDX)):
+    xmax = len(rna_distributions[T_IDX[itime]]) - 1
+    yrange = [mu_bg - 4 * sigma_bg, kappa * xmax + mu_bg + 4 * sigma_bg]
+    flowcyt_intensity_prob.append(chebfun(lambda y: intensitypointwise(y, rna_distributions[T_IDX[itime]]), yrange))
+    stmp = []
+    for ip in range(0, 4):
+        stmp.append(chebfun(lambda y: intensitypointwise(y, rna_sensitivities[T_IDX[itime]][ip]), yrange))
+    flowcyt_intensity_sens.append(stmp)
 
 def computedetF(a, b):
-    t_idx = DT * np.array([1, 2, 3, 4], dtype=int)
-    fim = NCELLS * computeFIMZfromY(flowcyt_intensity_sens[t_idx[0]], flowcyt_intensity_prob[t_idx[0]], a, b)
-    for i in range(1, len(t_idx)):
-        fim += NCELLS * computeFIMZfromY(flowcyt_intensity_sens[t_idx[i]], flowcyt_intensity_prob[t_idx[i]], a, b)
+    fim = NCELLS * computeFIMZfromY(flowcyt_intensity_sens[0], flowcyt_intensity_prob[0], a, b)
+    for i in range(1, len(T_IDX)):
+        fim += NCELLS * computeFIMZfromY(flowcyt_intensity_sens[i], flowcyt_intensity_prob[i], a, b)
     return np.linalg.det(fim)
 
 
@@ -108,12 +105,10 @@ MPI.COMM_WORLD.Allgather(sendbuf=(nblocal, 1, MPI.INT), recvbuf=(nballoc, 1, MPI
 ibstart[1:] = np.cumsum(nballoc)
 
 detFlocal = np.zeros((nblocal[0], NA), dtype=float)
-log10abounds = np.log10(ABOUNDS)
-log10bbounds = np.log10(BBOUNDS)
 for ib in range(0, nblocal[0]):
     for ia in range(0, NA):
-        a = np.power(10.0, log10abounds[0] + ia * (log10abounds[1] - log10abounds[0]) / NA)
-        b = np.power(10.0, log10bbounds[0] + (ib + ibstart[PROCID]) * (log10bbounds[1] - log10bbounds[0]) / NB)
+        a = 4*np.tan(ARGBOUNDS[0] + ia*(ARGBOUNDS[1]-ARGBOUNDS[0])/NA)
+        b = BBOUNDS[0] + (ib + ibstart[PROCID]) * (BBOUNDS[1] - BBOUNDS[0]) / NB
         detFlocal[ib, ia] = computedetF(a, b)
         print(f'Processor {PROCID} a = {a:.2e} b = {b:.2e} log10(detF) = {np.log10(detFlocal[ib, ia]):.2e} \n')
 
@@ -127,12 +122,18 @@ MPI.COMM_WORLD.Gatherv(sendbuf=(detFlocal, nblocal[0] * NA, MPI.DOUBLE),
 if PROCID == 0:
     np.savez('detFbinning.npz', detF = detF, abounds=ABOUNDS, bbounds=BBOUNDS)
 
+    import seaborn as sns
+    sns.set(style='darkgrid')
+    from basic_units import radians, degrees, cos
+
     detF = np.log10(detF)
     fig, ax = plt.subplots(1,1)
     fig.set_tight_layout(True)
-    acoos = np.logspace(log10abounds[0], log10abounds[1], NA)
-    bcoos = np.logspace(log10bbounds[0], log10bbounds[1], NB)
-    ax.contourf(acoos, bcoos, detF)
+    acoos = np.logspace(ARGBOUNDS[0], ARGBOUNDS[1], NA)
+    bcoos = np.linspace(BBOUNDS[0], BBOUNDS[1], NB)
+    ax.contourf(acoos, bcoos, detF, xunits=radians)
+    ax.set_xlabel('arctan(a/4)')
+    ax.set_ylabel('b')
     fig.savefig('binning_info_contours.pdf', bbox_inches='tight')
 
 
