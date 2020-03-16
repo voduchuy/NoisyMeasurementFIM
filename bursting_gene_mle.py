@@ -10,12 +10,13 @@ RANK = mpi.COMM_WORLD.Get_rank()
 NPROCS = mpi.COMM_WORLD.Get_size()
 np.random.seed(RANK)
 
-k_off_true = 0.001
-k_on_true = 0.005
-k_r_true = 0.5
-gamma_true = 0.01
+k_off_true = 0.015
+k_on_true = 0.05
+k_r_true = 5
+gamma_true = 0.05
+
 p_success = 0.5
-ncells = 100
+ncells = 1000
 init_bounds = np.array([1, 1, 20])
 t_meas = np.linspace(20*60/4, 20*60, 4)
 theta0 = np.array([k_on_true, k_off_true, k_r_true, gamma_true])
