@@ -20,7 +20,7 @@ with np.load('fsp_solutions.npz', allow_pickle=True) as data:
 nt = len(rna_distributions)
 
 # Monte Carlo estimate of the Fisher Information matrices, we assume that background noise could be accurately quantified independent of the experiment
-num_cells_flowcyt_mc = 100000
+num_cells_flowcyt_mc = 500000
 num_reps = 1
 
 dopt = []
@@ -53,7 +53,7 @@ for irep in range(0, num_reps):
             si.append(Cmat_flowcyt(itime, rna_sensitivities[itime][ip]))
         for ip in range(0,4):
             for jp in range(0, ip + 1):
-                M[ip, jp] = np.sum(si[ip] * si[jp] / np.maximum(p, 1.0e-14))
+                M[ip, jp] = np.sum(si[ip] * si[jp] / np.maximum(p*p, 1.0e-14))
         for ip in range(0, 4):
             for jp in range(ip + 1, 4):
                 M[ip, jp] = M[jp, ip]
