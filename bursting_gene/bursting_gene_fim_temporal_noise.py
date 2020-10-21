@@ -110,11 +110,16 @@ def temporally_distorted_distributions(exp_lambda: float, X0: [[int]], t_outputs
 if __name__ == "__main__":
 
     dists = {}
+    t_outputs = np.linspace(0, 400, 401)
+    k = 100
 
     for exp_lambda in [1.0, 1.0/5.0, 1.0/10.0]:
-        t_outputs = np.linspace(0, 300, 301)
-        p_Y, S_Y = temporally_distorted_distributions(exp_lambda, X0, t_outputs, 0.1)
-        dists[exp_lambda] = {'p': p_Y, 's': S_Y}
+        dists[exp_lambda] = {'p': [], 's': []}
+        for i in range(0, len(t_outputs), k):
+            i1 = min(len(t_outputs), i+k)
+            p_Y, S_Y = temporally_distorted_distributions(exp_lambda, X0, t_outputs[i:i1], 0.1)
+            dists[exp_lambda]['p'].append(p_Y)
+            dists[exp_lambda]['s'].append(S_Y)
 
     np.savez("results/temporally_distorted_dists.npz", dists=dists, t_meas = t_outputs)
 
