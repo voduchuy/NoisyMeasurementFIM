@@ -1,4 +1,5 @@
 from pypacmensl.sensitivity.multi_sinks import SensFspSolverMultiSinks
+from pypacmensl.sensitivity.distribution import SensDiscreteDistribution
 import mpi4py.MPI as mpi
 import numpy as np
 #%%
@@ -28,9 +29,7 @@ def dprop_t_factory(i: int):
     return dprop_t
 
 
-dprop_t_list = []
-for i in range(0, 4):
-    dprop_t_list.append(dprop_t_factory(i))
+dprop_t_list = [dprop_t_factory(i) for i in range(4)]
 dprop_sparsity = np.eye(4, dtype=np.intc)
 
 
@@ -53,54 +52,48 @@ def prop_x(reaction, X, out):
         return None
 
 #%%
-def temporally_distorted_distributions(exp_lambda: float, X0: [[int]], t_outputs: [float], integral_stepsize: float,
-                                       trunc_tol: float=1.0E-8):
+def vec_add(v1: np.array, v2: np.array):
+    v = np.zeros((max([len(v1), len(v2)])))
+    v[0:len(v1)] = v1
+    v[0:len(v2)] += v2
+    return v
 
-    B = 1.2*np.log(exp_lambda/trunc_tol)/exp_lambda
+def weighted_vecadd(v: [np.array], weights: [float]):
+    ans = weights[0]*v[0]
+    for j in range(1, len(v)):
+        ans = vec_add(ans, weights[j]*v[j])
+    return ans
+
+def temporally_distorted_distributions(exp_lambdas: [float], init_sens: SensDiscreteDistribution, integral_stepsize:
+float, trunc_tol: float=1.0E-8):
+
+    ell = max(exp_lambdas)
+    B = 1.2*np.log(ell/trunc_tol)/ell
     nnodes_int = int(np.ceil(B / integral_stepsize))
     h = np.linspace(0, B, nnodes_int)
-    t_cme = np.unique(np.array([x + h for x in t_outputs]).flatten())
-    t_idxs = {t_cme[i]: i for i in range(len(t_cme))}
 
     comm = mpi.COMM_WORLD
     init_bounds = np.array([1, 1, 20])
     solver = SensFspSolverMultiSinks(comm)
     solver.SetModel(np.array(SM), prop_t, prop_x, dprop_t_list, [prop_x] * 4, dprop_sparsity)
     solver.SetFspShape(constr_fun=None, constr_bound=init_bounds)
-    solver.SetInitialDist(np.array(X0), np.array(P0), [np.array(S0)] * 4)
+    solver.SetInitialDist1(init_sens)
     solver.SetVerbosity(2)
-    solutions = solver.SolveTspan(t_cme, 1.0e-8)
+    solutions = solver.SolveTspan(h, 1.0E-4)
 
-    Y_distributions = []
-    Y_sensitivities = []
+    Y_distributions = {ell: [] for ell in exp_lambdas}
+    Y_sensitivities = {ell: [] for ell in exp_lambdas}
 
-    def vec_add(v1: np.array, v2: np.array):
-        v = np.zeros((max([len(v1), len(v2)])))
-        v[0:len(v1)] = v1
-        v[0:len(v2)] += v2
-        return v
-
-    for t in t_outputs:
-        i = t_idxs[t]
-        ptmp = exp_lambda*solutions[i].Marginal(2)
-        for j in range(0, nnodes_int):
-            i = t_idxs[t + h[j]]
-            ptmp2 = exp_lambda*np.exp(-exp_lambda*h[j])*solutions[i].Marginal(2)
-            ptmp = vec_add(ptmp, ptmp2)
-        ptmp = integral_stepsize*ptmp
-        Y_distributions.append(ptmp)
+    for ell in exp_lambdas:
+        ps = [solutions[i].Marginal(2) for i in range(nnodes_int)]
+        ws = ell*np.exp(-ell*h)
+        Y_distributions[ell] = integral_stepsize*weighted_vecadd(ps, ws)
 
         sens_list = []
         for iS in range(0, 4):
-            i = t_idxs[t]
-            stmp = exp_lambda * solutions[i].SensMarginal(iS, 2)
-            for j in range(0, nnodes_int):
-                i = t_idxs[t + h[j]]
-                stmp2 = exp_lambda * np.exp(-exp_lambda * h[j]) * solutions[i].SensMarginal(iS, 2)
-                stmp = vec_add(stmp, stmp2)
-            stmp = integral_stepsize*stmp
-            sens_list.append(stmp)
-        Y_sensitivities.append(sens_list)
+            ss = [solutions[i].SensMarginal(iS, 2) for i in range(nnodes_int)]
+            sens_list.append(integral_stepsize*weighted_vecadd(ss, ws))
+        Y_sensitivities[ell] = sens_list
 
     return Y_distributions, Y_sensitivities
 
@@ -108,18 +101,30 @@ def temporally_distorted_distributions(exp_lambda: float, X0: [[int]], t_outputs
 
 
 if __name__ == "__main__":
-
-    dists = {}
     t_outputs = np.linspace(0, 400, 401)
+    comm = mpi.COMM_WORLD
+    init_bounds = np.array([1, 1, 20])
+    solver = SensFspSolverMultiSinks(comm)
+    solver.SetModel(np.array(SM), prop_t, prop_x, dprop_t_list, [prop_x] * 4, dprop_sparsity)
+    solver.SetFspShape(constr_fun=None, constr_bound=init_bounds)
+    solver.SetInitialDist(np.array(X0), np.array([1.0]), np.array([0.0]*4))
+    solver.SetVerbosity(2)
+    undistorted_ps = solver.SolveTspan(t_outputs, 1.0E-6)
+
     k = 100
+    exp_lambdas = [1.0, 1.0/5.0, 1.0/10.0]
+    dists = {ell: {'p':[], 's':[]} for ell in exp_lambdas}
 
-    for exp_lambda in [1.0, 1.0/5.0, 1.0/10.0]:
-        dists[exp_lambda] = {'p': [], 's': []}
-        for i in range(0, len(t_outputs), k):
-            i1 = min(len(t_outputs), i+k)
-            p_Y, S_Y = temporally_distorted_distributions(exp_lambda, X0, t_outputs[i:i1], 0.1)
-            dists[exp_lambda]['p'].append(p_Y)
-            dists[exp_lambda]['s'].append(S_Y)
+    for i in range(len(t_outputs)):
+        print(f"Generating distorted distributions and sensitivities for t = {t_outputs[i]: .2e}")
+        p_Y, S_Y = temporally_distorted_distributions(exp_lambdas, undistorted_ps[i], 0.1, 1.0E-7)
 
-    np.savez("results/temporally_distorted_dists.npz", dists=dists, t_meas = t_outputs)
+        for ell in exp_lambdas:
+            dists[ell]['p'].append(p_Y[ell])
+            dists[ell]['s'].append(S_Y[ell])
+
+        if mpi.COMM_WORLD.Get_rank() == 0:
+            np.savez("results/temporally_distorted_dists.npz", dists=dists, t_meas=t_outputs)
+
+
 
