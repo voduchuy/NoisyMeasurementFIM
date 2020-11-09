@@ -83,7 +83,7 @@ if rank == 0:
              rna_sensitivities=rna_sensitivities, t_meas=t_meas, allow_pickle=True)
 #%%
 if rank == 0:
-    with np.load('fsp_solutions.npz', allow_pickle=True) as f:
+    with np.load('results/fsp_solutions.npz', allow_pickle=True) as f:
         rna_distributions=f['rna_distributions']
         rna_sensitivities=f['rna_sensitivities']
         t_meas = f['t_meas']

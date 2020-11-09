@@ -67,7 +67,7 @@ def weighted_vecadd(v: [np.array], weights: [float]):
 def temporally_distorted_distributions(exp_lambdas: [float], init_sens: SensDiscreteDistribution, integral_stepsize:
 float, trunc_tol: float=1.0E-8):
 
-    ell = max(exp_lambdas)
+    ell = min(exp_lambdas)
     B = 1.2*np.log(ell/trunc_tol)/ell
     nnodes_int = int(np.ceil(B / integral_stepsize))
     h = np.linspace(0, B, nnodes_int)
@@ -98,33 +98,61 @@ float, trunc_tol: float=1.0E-8):
     return Y_distributions, Y_sensitivities
 
 #%%
-
+import sys
 
 if __name__ == "__main__":
-    t_outputs = np.linspace(0, 400, 401)
-    comm = mpi.COMM_WORLD
-    init_bounds = np.array([1, 1, 20])
-    solver = SensFspSolverMultiSinks(comm)
-    solver.SetModel(np.array(SM), prop_t, prop_x, dprop_t_list, [prop_x] * 4, dprop_sparsity)
-    solver.SetFspShape(constr_fun=None, constr_bound=init_bounds)
-    solver.SetInitialDist(np.array(X0), np.array([1.0]), np.array([0.0]*4))
-    solver.SetVerbosity(2)
-    undistorted_ps = solver.SolveTspan(t_outputs, 1.0E-6)
+    if len(sys.argv) > 1:
+        run_fsp = True
+    else:
+        run_fsp = False
 
-    k = 100
-    exp_lambdas = [1.0, 1.0/5.0, 1.0/10.0]
-    dists = {ell: {'p':[], 's':[]} for ell in exp_lambdas}
+    if run_fsp:
+        t_outputs = np.linspace(0, 400, 401)
+        comm = mpi.COMM_WORLD
+        init_bounds = np.array([1, 1, 20])
+        solver = SensFspSolverMultiSinks(comm)
+        solver.SetModel(np.array(SM), prop_t, prop_x, dprop_t_list, [prop_x] * 4, dprop_sparsity)
+        solver.SetFspShape(constr_fun=None, constr_bound=init_bounds)
+        solver.SetInitialDist(np.array(X0), np.array([1.0]), np.array([0.0]*4))
+        solver.SetVerbosity(2)
+        undistorted_ps = solver.SolveTspan(t_outputs, 1.0E-6)
 
-    for i in range(len(t_outputs)):
-        print(f"Generating distorted distributions and sensitivities for t = {t_outputs[i]: .2e}")
-        p_Y, S_Y = temporally_distorted_distributions(exp_lambdas, undistorted_ps[i], 0.1, 1.0E-7)
+        k = 100
+        exp_lambdas = [1.0, 1.0/5.0, 1.0/10.0]
+        dists = {ell: {'p':[], 's':[]} for ell in exp_lambdas}
 
-        for ell in exp_lambdas:
-            dists[ell]['p'].append(p_Y[ell])
-            dists[ell]['s'].append(S_Y[ell])
+        for i in range(len(t_outputs)):
+            print(f"Generating distorted distributions and sensitivities for t = {t_outputs[i]: .2e}")
+            p_Y, S_Y = temporally_distorted_distributions(exp_lambdas, undistorted_ps[i], 0.1, 1.0E-7)
 
-        if mpi.COMM_WORLD.Get_rank() == 0:
-            np.savez("results/temporally_distorted_dists.npz", dists=dists, t_meas=t_outputs)
+            for ell in exp_lambdas:
+                dists[ell]['p'].append(p_Y[ell])
+                dists[ell]['s'].append(S_Y[ell])
 
+            if mpi.COMM_WORLD.Get_rank() == 0:
+                np.savez("results/temporally_distorted_dists.npz", dists=dists, t_meas=t_outputs)
 
+#%%
+    with np.load("results/temporally_distorted_dists.npz", allow_pickle=True) as f:
+        t_meas = f["t_meas"]
+        dists = f["dists"][()]
 
+    exp_lambdas = list(dists.keys())
+    n_time = len(t_meas)
+    n_par = len(dists[exp_lambdas[0]]['s'][0])
+    temporal_fims = {}
+    for ell in exp_lambdas:
+        fim_temporal = np.zeros((n_time, n_par, n_par))
+        for itime in range(n_time):
+            p = dists[ell]['p'][itime]
+            for ipar in range(n_par):
+                si = dists[ell]['s'][itime][ipar]
+                for jpar in range(0, ipar+1):
+                    sj = dists[ell]['s'][itime][jpar]
+                    fim_temporal[itime, ipar, jpar] = np.sum(si * sj / np.maximum(1.e-16, p))
+            for ipar in range(0, n_par):
+                for jpar in range(ipar + 1, n_par):
+                    fim_temporal[ipar, jpar] = fim_temporal[jpar, ipar]
+        temporal_fims[ell] = fim_temporal
+    if mpi.COMM_WORLD.Get_rank() == 0:
+        np.savez("results/temporal_fim.npz", temporal_fims=temporal_fims)

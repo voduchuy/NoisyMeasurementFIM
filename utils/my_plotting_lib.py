@@ -5,7 +5,7 @@ from matplotlib.ticker import FormatStrFormatter
 def plot_conf_ellipse(fim: np.ndarray,
                       num_sigma: int,
                       ax: plt.Axes,
-                      par_idx: int,
+                      par_idx: [int],
                       theta: np.ndarray,
                       color='red', label='my_ellipse'):
     covmat = np.linalg.inv(fim)
@@ -51,13 +51,12 @@ def plot_conf_ellipse(fim: np.ndarray,
     return 0
 
 
-def plot_barcodes(fim_mats: [np.ndaray],
+def plot_barcodes(fim_mats: [np.ndarray],
                   labels: [str],
                   colors: [str],
                   ax: plt.Axes):
     # The uncertainties in eigendirections of different experiments
     for i in range(0, len(fim_mats)):
-
         [eigval, eigvec] = np.linalg.eig(fim_mats[i])
         uncertainties = 1 / np.sqrt(eigval)
 
