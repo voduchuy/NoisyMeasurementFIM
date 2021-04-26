@@ -20,7 +20,7 @@ with np.load("results/fsp_solutions.npz", allow_pickle=True) as f:
     t_meas = f["t_meas"]
 #%% FIMs for continuous-valued flow cytometry measurements
 n_iterations = 10
-n_particles = 10000
+n_particles = 100000
 
 n_par_local = n_particles // comm_size + (cpuid < n_particles % comm_size)
 fim = np.zeros((len(t_meas), 4,4))
