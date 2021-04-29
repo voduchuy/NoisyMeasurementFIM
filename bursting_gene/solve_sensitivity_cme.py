@@ -5,7 +5,7 @@ from bursting_gene_model import BurstingGeneModel
 
 model = BurstingGeneModel()
 
-t_meas = np.linspace(0, 1000, 1001)
+t_meas = np.linspace(0, 400, 401)
 
 # This problem actually can be solved with just one core, but why leave your other cores idle?
 comm = mpi.COMM_WORLD
