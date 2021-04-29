@@ -19,7 +19,7 @@ with np.load("results/fsp_solutions.npz", allow_pickle=True) as f:
     rna_sensitivities = f["rna_sensitivities"]
     t_meas = f["t_meas"]
 #%% FIMs for continuous-valued flow cytometry measurements
-n_iterations = 10
+n_iterations = 2
 n_particles = 100000
 
 n_par_local = n_particles // comm_size + (cpuid < n_particles % comm_size)
@@ -30,7 +30,7 @@ tmp = np.zeros((1,))
 buf = np.zeros((1,))
 for imc in range(n_iterations):
     print(f"Monte Carlo iteration {imc}")
-    for itime in range(0, len(t_meas)):
+    for itime in range(len(t_meas)):
         p = rna_distributions[itime]
         p = np.abs(p)
         p /= np.sum(p)
@@ -55,7 +55,7 @@ for imc in range(n_iterations):
                 fim[itime, ip, jp] = buf[0] / n_particles
 
         for ip in range(0,4):
-            for jp in range(0, ip):
+            for jp in range(ip+1, 4):
                 fim[itime, ip, jp] = fim[itime, jp, ip]
     fim_estimates.append(fim)
 

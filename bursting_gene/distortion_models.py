@@ -103,9 +103,9 @@ class FlowCytometryModel(DistortionModel):
     def __init__(
         self,
         mu_probe: float = 220,
-        sigma_probe: float = 390,
+        sigma_probe: float = 300,
         mu_bg: float = 100,
-        sigma_bg: float = 500,
+        sigma_bg: float = 200,
     ):
         self.mu_probe = mu_probe
         self.sigma_probe = sigma_probe

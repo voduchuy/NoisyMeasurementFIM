@@ -1,4 +1,6 @@
 import numpy as np
+from typing import Union, NoReturn
+
 
 def computeCriteria(fims: np.ndarray, criteria: str="d") -> np.ndarray:
     """
@@ -31,8 +33,13 @@ def computeCriteria(fims: np.ndarray, criteria: str="d") -> np.ndarray:
     }
     func = criteria_func[criteria]
 
-    y = np.zeros(fims.shape[:-2])
+    if len(fims.shape) < 2:
+        raise ValueError("Input FIMS must have at least two dimensions.")
 
+    if len(fims.shape) == 2:
+        return func(fims)
+
+    y = np.zeros(fims.shape[:-2])
     y_view = np.reshape(y, (-1, 1))
     fims_view = np.reshape(fims, (np.prod(fims.shape[:-2]), fims.shape[-2], fims.shape[-1]))
 
@@ -40,6 +47,21 @@ def computeCriteria(fims: np.ndarray, criteria: str="d") -> np.ndarray:
         y_view[i] = func(fims_view[i, :, :])
 
     return y
+
+
+def logTransform(fims: np.ndarray, theta: np.ndarray, inplace=True)->Union[np.ndarray, NoReturn]:
+    num_parameter = len(theta)
+    if num_parameter != fims.shape[-1]:
+        raise ValueError("Dimensions of parameter vector and the Fisher Information Matrices do not match.")
+    if inplace:
+        out = fims
+    else:
+        out = np.copy(fims)
+    for i in range(0, num_parameter):
+        for j in range(0, num_parameter):
+            out[..., i, j] *= theta[i]*theta[j]*np.log(10)*np.log(10)
+    return out
+
 
 if __name__ == "__main__":
     mats = np.ones((2,2,2,2))
