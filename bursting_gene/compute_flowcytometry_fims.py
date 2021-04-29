@@ -20,7 +20,7 @@ with np.load("results/fsp_solutions.npz", allow_pickle=True) as f:
     t_meas = f["t_meas"]
 #%% FIMs for continuous-valued flow cytometry measurements
 n_iterations = 1
-n_particles = 10000000
+n_particles = 10000
 
 n_par_local = n_particles // comm_size + (cpuid < n_particles % comm_size)
 fim = np.zeros((len(t_meas), 4,4))
@@ -41,7 +41,7 @@ for imc in range(n_iterations):
                 xsamples = rng.choice(len(p), p=p, size=n_par_local)
 
                 xrange = np.arange(len(p))
-                ysamples = flowcyt.sampleObservations(xsamples)
+                ysamples = flowcyt.sampleObservations(xsamples, rng=rng)
 
                 yrange, ycounts = np.unique(ysamples, return_counts=True)
 
