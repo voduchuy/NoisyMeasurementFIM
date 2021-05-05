@@ -117,12 +117,12 @@ class FlowCytometryModel(DistortionModel):
             -((y - x * self.mu_probe - self.mu_bg) ** 2.0)
             / (2.0 * (x * x * self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0))
         ) / np.sqrt(
-            2 * np.pi * (x * x * self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0)
-        )
+            2 * np.pi * (x * x * self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0))
+
 
     def sampleObservations(self, x: np.ndarray, rng=RNG) -> np.ndarray:
         ans = rng.normal(
             loc=self.mu_probe * x + self.mu_bg,
-            scale=np.sqrt(x*x*self.sigma_probe ** 2.0  + self.sigma_bg ** 2.0),
+            scale=np.sqrt(x*x*self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0),
         )
         return ans

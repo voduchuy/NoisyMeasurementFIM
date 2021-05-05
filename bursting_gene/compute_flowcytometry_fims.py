@@ -19,34 +19,31 @@ with np.load("results/fsp_solutions.npz", allow_pickle=True) as f:
     rna_sensitivities = f["rna_sensitivities"]
     t_meas = f["t_meas"]
 #%% FIMs for continuous-valued flow cytometry measurements
-n_iterations = 1
+n_iterations = 10
 n_particles = 1000000
 
-n_par_local = n_particles // comm_size + (cpuid < n_particles % comm_size)
-fim = np.zeros((len(t_meas), 4,4))
+n_par_local = n_particles // comm_size + (cpuid < (n_particles % comm_size))
 flowcyt = FlowCytometryModel()
 fim_estimates = []
 tmp = np.zeros((1,))
 buf = np.zeros((1,))
 for imc in range(n_iterations):
     print(f"Monte Carlo iteration {imc}")
+    fim = np.zeros((len(t_meas), 4, 4))
     for itime in range(len(t_meas)):
         p = rna_distributions[itime]
         p = np.abs(p)
         p /= np.sum(p)
+        xrange = np.arange(len(p))
+        xsamples = rng.choice(len(p), p=p, size=n_par_local)
+        ysamples = flowcyt.sampleObservations(xsamples, rng=rng)
+        yrange, ycounts = np.unique(ysamples, return_counts=True)
+        C = flowcyt.getDenseMatrix(xrange, yrange)
+
         for ip in range(0,4):
-            for jp in range(0, ip+1):
+            for jp in range(0, 4):
                 a = rna_sensitivities[itime][ip]
                 b = rna_sensitivities[itime][jp]
-                xsamples = rng.choice(len(p), p=p, size=n_par_local)
-
-                xrange = np.arange(len(p))
-                ysamples = flowcyt.sampleObservations(xsamples, rng=rng)
-
-                yrange, ycounts = np.unique(ysamples, return_counts=True)
-
-                C = flowcyt.getDenseMatrix(xrange, yrange)
-
                 tmp[0] = np.sum(((C@a)/(C@p))*((C@b)/(C@p))*ycounts)
 
                 comm.Allreduce(sendbuf=[tmp, 1, mpi.DOUBLE],
@@ -54,9 +51,6 @@ for imc in range(n_iterations):
                                op=mpi.SUM)
                 fim[itime, ip, jp] = buf[0] / n_particles
 
-        for ip in range(0,4):
-            for jp in range(ip+1, 4):
-                fim[itime, ip, jp] = fim[itime, jp, ip]
     fim_estimates.append(fim)
 
 if cpuid == 0:
