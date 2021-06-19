@@ -1,5 +1,5 @@
-
 .DS_Store
+.idea/**
 *.ipynb
 *.pdf
 *.iml
@@ -7,7 +7,6 @@
 *.pdf
 *.pyc
 *.pdf
-*.npz
 *.png
 
 
