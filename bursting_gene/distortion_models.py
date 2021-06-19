@@ -71,6 +71,7 @@ class LowResolutionModel(DistortionModel):
     # We consider spot miscounting due to low image resolution. Let $S$ be the size of the cell in terms of the pixels it occupies. Ignore for now the variability in cell sizes. Bright spots may clutter within a pixel, making the image looks like there is only one spot when there should actually be several of them.
     #
     # Given cell size S and n mRNA molecules, the recorded number of spots is given by the formula
+    #
     # $$
     # P(Y = j | S, n)
     # =
@@ -79,7 +80,9 @@ class LowResolutionModel(DistortionModel):
     # {\binom{S + n - 1}{n}}
     # $$
     #
-    # This comes from a combinatoric problem: Given $S$ boxes and $n$ apples, how many ways are there to distribute these apples into these boxes such that there are exactly $j$ non-empty boxes.
+    # This comes from a combinatoric problem:
+    # Given $S$ boxes and $n$ apples,
+    # how many ways are there to distribute these apples into these boxes such that there are exactly $j$ non-empty boxes.
     def __init__(self, numPixels: int = 100):
         """
 
@@ -92,10 +95,15 @@ class LowResolutionModel(DistortionModel):
 
     def getConditionalProbabilities(self, x: int, y: np.ndarray) -> np.ndarray:
         return (
-            comb(self.numPixels, y)
-            * comb(x - 1, y - 1)
-            / comb(self.numPixels + x - 1, x)
+            comb(self.numPixels, y)*comb(x-1, y-1)/comb(self.numPixels + x - 1, x)
         )
+
+    def sampleObservations(self, x: np.ndarray, rng=RNG) -> np.ndarray:
+        ans = np.zeros(x.shape[0], dtype=int)
+        for i, rnaCount in enumerate(x):
+            tmp = rng.choice(self.numPixels, size=rnaCount, replace=True)
+            ans[i] = len(np.unique(tmp))
+        return ans
 
 
 #%% Flow-cytometry measurement
