@@ -6,10 +6,8 @@
 *.xml
 *.pdf
 *.pyc
-bursting_gene/figs/fim_dopt.pdf
 *.pdf
 *.npz
-*.pdf
-bursting_gene/figs/mixture_dopt.png
-bursting_gene/figs/fim_dopt.pdf
-bursting_gene/figs/mixture_dopt.png
+*.png
+
+
