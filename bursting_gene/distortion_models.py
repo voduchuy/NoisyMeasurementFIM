@@ -107,6 +107,7 @@ class LowResolutionModel(DistortionModel):
 
 
 #%% Flow-cytometry measurement
+# TODO: make the variance scales linearly with x (not the std like now)
 class FlowCytometryModel(DistortionModel):
     def __init__(
         self,

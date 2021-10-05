@@ -14,12 +14,15 @@ ncpus = comm.Get_size()
 
 solver = SensFspSolverMultiSinks(comm)
 solver.SetModel(
-    np.array(model.stoichMatrix),
-    model.propensity_t,
-    model.propensity_x,
-    model.dprop_t_list,
-    [model.propensity_x] * 4,
-    model.dprop_sparsity,
+    num_parameters=4,
+    stoich_matrix = np.array(model.stoichMatrix),
+    propensity_t = None,
+    propensity_x = model.propensity_x,
+    tv_reactions = [],
+    d_propensity_t = None,
+    d_propensity_t_sp = None,
+    d_propensity_x = model.dpropensity_x,
+    d_propensity_x_sp = model.dpropx_sparsity
 )
 solver.SetVerbosity(2)
 solver.SetFspShape(constr_fun=None, constr_bound=model.init_bounds)

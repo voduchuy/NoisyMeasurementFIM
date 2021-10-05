@@ -26,39 +26,47 @@ class BurstingGeneModel:
         else:
             self.k01, self.k10, self.alpha, self.gamma = parameters
 
-        self.dprop_sparsity = np.eye(4, dtype=np.intc)
-
-        def dprop_t_factory(i: int):
-            def dprop_t(t, out):
-                out[:] = 0.0
-                out[i] = 1.0
-
-            return dprop_t
-
-        self.dprop_t_list = []
-        for i in range(0, 4):
-            self.dprop_t_list.append(dprop_t_factory(i))
+        self.dpropx_sparsity = [[0], [1], [2], [3]]
+        self.dpropt_sparsity = None
 
         def propensity_t(t, out):
-            out[0] = self.k01
-            out[1] = self.k10
-            out[2] = self.alpha
-            out[3] = self.gamma
+            out[:] = 0.0
             return None
 
         def propensity_x(reaction, X, out):
             if reaction == 0:
-                out[:] = X[:, 0]
+                out[:] = self.k01*X[:, 0]
                 return None
             if reaction == 1:
-                out[:] = X[:, 1]
+                out[:] = self.k10*X[:, 1]
                 return None
             if reaction == 2:
-                out[:] = X[:, 1]
+                out[:] = self.alpha*X[:, 1]
                 return None
             if reaction == 3:
-                out[:] = X[:, 2]
+                out[:] = self.gamma*X[:, 2]
                 return None
 
-        self.propensity_t = propensity_t
+        def d_prop_x(par_idx, reaction, X, out):
+            if par_idx == 0:
+                if reaction == 0:
+                    out[:] = X[:, 0]
+            elif par_idx == 1:
+                if reaction == 1:
+                    out[:] = X[:, 1]
+            elif par_idx == 2:
+                if reaction == 2:
+                    out[:] = X[:, 1]
+            elif par_idx == 3:
+                if reaction == 3:
+                    out[:] = X[:, 2]
+            else:
+                raise ValueError("Invalid parameter index.")
+
+        self.propensity_t = None
         self.propensity_x = propensity_x
+        self.dpropensity_t = None
+        self.dpropensity_x = d_prop_x
+
+
+

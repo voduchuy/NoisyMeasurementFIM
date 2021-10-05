@@ -19,7 +19,7 @@ with np.load("results/fsp_solutions.npz", allow_pickle=True) as f:
     rna_sensitivities = f["rna_sensitivities"]
     t_meas = f["t_meas"]
 #%% FIMs for continuous-valued flow cytometry measurements
-n_iterations = 10
+n_iterations = 4
 n_particles = 1000000
 
 n_par_local = n_particles // comm_size + (cpuid < (n_particles % comm_size))
