@@ -1,11 +1,12 @@
-
 .DS_Store
+.idea/**
 *.ipynb
 *.pdf
 *.iml
 *.xml
 *.pdf
 *.pyc
-bursting_gene/figs/fim_dopt.pdf
 *.pdf
-*.npz
+*.png
+
+

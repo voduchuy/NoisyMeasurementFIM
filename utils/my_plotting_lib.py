@@ -68,3 +68,11 @@ def plot_barcodes(fim_mats: [np.ndarray],
     ax.set_ylabel('Uncertainty')
 
     return 0
+
+
+from string import ascii_uppercase
+
+
+def label_axes(axs: [plt.Axes]):
+    for i, ax in enumerate(list(axs.flatten())):
+        ax.set_title(ascii_uppercase[i])
