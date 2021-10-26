@@ -20,11 +20,11 @@ class ToggleSwitchModel:
     P0 = [1.0]
     S0 = [0.0]
     NUM_PARAMETERS = 10
-    init_bounds = np.array([20, 20])
+    init_bounds = np.array([5, 5])
 
     stoichMatrix = [[1, 0], [-1, 0], [0, 1], [0, -1]]
 
-    def __init__(self, parameters: Union[np.ndarray, dict] = _DEFAULT_PARAMETERS):
+    def __init__(self, parameters: Union[np.ndarray, dict] = _DEFAULT_PARAMETERS, UV: float=0.0):
         if type(parameters) == dict:
             self.bx = parameters["bx"]
             self.by = parameters["by"]
@@ -50,52 +50,21 @@ class ToggleSwitchModel:
                 self.gammay,
             ) = parameters
 
-        def propensity_t(t, out):
-            out[:] = 1.0
-            return None
-
         def propensity_x(reaction, X, out):
             if reaction == 0:
-                out[:] = self.bx + self.kx / (1 + self.ayx * X[:, 1] ** self.nyx)
+                out[:] = self.bx + self.kx / (1.0 + self.ayx * X[:, 1] ** self.nyx)
                 return None
             if reaction == 1:
                 out[:] = self.gammax * X[:, 0]
                 return None
             if reaction == 2:
-                out[:] = self.by + self.ky / (1 + self.axy * X[:, 0] ** self.nxy)
+                out[:] = self.by + self.ky / (1.0 + self.axy * X[:, 0] ** self.nxy)
                 return None
             if reaction == 3:
-                out[:] = self.gammay * X[:, 1]
+                out[:] = (self.gammay + 0.002*UV**2.0/(1250.0 + UV**3.0))* X[:, 1]
                 return None
 
-        self.propensity_t = propensity_t
         self.propensity_x = propensity_x
-
-        # NEED TO CHANGE THIS
-        self.dprop_sparsity = np.array(
-            [
-                [1, 0, 0, 0],
-                [0, 0, 1, 0],
-                [1, 0, 0, 0],
-                [0, 0, 1, 0],
-                [1, 0, 0, 0],
-                [0, 0, 1, 0],
-                [1, 0, 0, 0],
-                [0, 0, 1, 0],
-                [0, 1, 0, 0],
-                [0, 0, 0, 1],
-            ]
-        ).astype(np.intc)
-
-        def dprop_t_factory(i: int):
-            def dprop_t(t, out):
-                out[:] = 0.0
-
-            return dprop_t
-
-        self.dprop_t_list = []
-        for i in range(0, 10):
-            self.dprop_t_list.append(dprop_t_factory(i))
 
         def dpropx_dbx(reaction, X, out):
             if reaction == 0:
@@ -113,14 +82,14 @@ class ToggleSwitchModel:
 
         def dpropx_dkx(reaction, X, out):
             if reaction == 0:
-                out[:] = 1.0 / (1 + self.ayx * X[:, 1] ** self.nyx)
+                out[:] = 1.0 / (1.0 + self.ayx * X[:, 1] ** self.nyx)
             else:
                 out[:] = 0.0
             return None
 
         def dpropx_dky(reaction, X, out):
             if reaction == 2:
-                out[:] = 1.0 / (1 + self.axy * X[:, 0] ** self.nxy)
+                out[:] = 1.0 / (1.0 + self.axy * X[:, 0] ** self.nxy)
             else:
                 out[:] = 0.0
             return None
@@ -128,7 +97,7 @@ class ToggleSwitchModel:
         def dpropx_dayx(reaction, X, out):
             if reaction == 0:
                 out[:] = (
-                    -(X[:, 1] ** self.nyx) / (1 + self.ayx * X[:, 1] ** self.nyx) ** 2.0
+                    -(X[:, 1] ** self.nyx)*self.kx * (1.0 + self.ayx * X[:, 1] ** self.nyx) ** (-2.0)
                 )
             else:
                 out[:] = 0.0
@@ -137,7 +106,7 @@ class ToggleSwitchModel:
         def dpropx_daxy(reaction, X, out):
             if reaction == 2:
                 out[:] = (
-                    -(X[:, 0] ** self.nxy) / (1 + self.axy * X[:, 0] ** self.nxy) ** 2.0
+                    -(X[:, 0] ** self.nxy)*self.ky * (1.0 + self.axy * X[:, 0] ** self.nxy) ** (-2.0)
                 )
             else:
                 out[:] = 0.0
@@ -146,8 +115,8 @@ class ToggleSwitchModel:
         def dpropx_dnyx(reaction, X, out):
             if reaction == 0:
                 out[:] = (
-                    -(self.nyx * self.ayx * X[:, 1] ** (self.nyx - 1.0))
-                    / (1 + self.ayx * X[:, 1] ** self.nyx) ** 2.0
+                    -self.kx*(self.nyx * self.ayx * X[:, 1] ** (self.nyx - 1.0))
+                    * (1.0 + self.ayx * X[:, 1] ** self.nyx) ** (-2.0)
                 )
             else:
                 out[:] = 0.0
@@ -156,8 +125,8 @@ class ToggleSwitchModel:
         def dpropx_dnxy(reaction, X, out):
             if reaction == 2:
                 out[:] = (
-                    -(self.nxy * X[:, 0] ** (self.nxy - 1.0))
-                    / (1 + self.axy * X[:, 0] ** self.nxy) ** 2.0
+                    -self.ky*(self.nxy * X[:, 0] ** (self.nxy - 1.0))
+                    * (1.0 + self.axy * X[:, 0] ** self.nxy) ** (-2.0)
                 )
             else:
                 out[:] = 0.0
@@ -173,7 +142,7 @@ class ToggleSwitchModel:
                 out[:] = X[:, 1]
             return None
 
-        self.dprop_x_list = [
+        self.dpropx_list = [
             dpropx_dbx,
             dpropx_dby,
             dpropx_dkx,
@@ -185,3 +154,12 @@ class ToggleSwitchModel:
             dpropx_dgx,
             dpropx_dgy
         ]
+
+        self.dpropx_sparsity = \
+            [ [0], [2], [0], [2], [0], [2], [0], [2], [1], [3]]
+
+
+        def dpropx(parameter_idx: int, reaction: int, x: np.ndarray, out: np.ndarray)->None:
+            return self.dpropx_list[parameter_idx](reaction, x, out)
+
+        self.dpropx = dpropx
