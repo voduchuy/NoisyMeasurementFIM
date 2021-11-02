@@ -112,8 +112,8 @@ class LowResolutionModel(DistortionModel):
 class FlowCytometryModel(DistortionModel):
     def __init__(
         self,
-        mu_probe: float = 200,
-        sigma_probe: float = 200,
+        mu_probe: float = 300,
+        sigma_probe: float = 300,
         mu_bg: float = 100,
         sigma_bg: float = 200,
     ):
@@ -131,6 +131,6 @@ class FlowCytometryModel(DistortionModel):
     def sampleObservations(self, x: np.ndarray, rng=RNG) -> np.ndarray:
         ans = rng.normal(
             loc=self.mu_probe * x + self.mu_bg,
-            scale=np.sqrt(x *  self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0),
+            scale=np.sqrt(x * self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0),
         )
         return ans
