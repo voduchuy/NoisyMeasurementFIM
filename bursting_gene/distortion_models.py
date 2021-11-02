@@ -95,7 +95,9 @@ class LowResolutionModel(DistortionModel):
 
     def getConditionalProbabilities(self, x: int, y: np.ndarray) -> np.ndarray:
         return (
-            comb(self.numPixels, y)*comb(x-1, y-1)/comb(self.numPixels + x - 1, x)
+            comb(self.numPixels, y)
+            * comb(x - 1, y - 1)
+            / comb(self.numPixels + x - 1, x)
         )
 
     def sampleObservations(self, x: np.ndarray, rng=RNG) -> np.ndarray:
@@ -107,12 +109,11 @@ class LowResolutionModel(DistortionModel):
 
 
 #%% Flow-cytometry measurement
-# TODO: make the variance scales linearly with x (not the std like now)
 class FlowCytometryModel(DistortionModel):
     def __init__(
         self,
-        mu_probe: float = 220,
-        sigma_probe: float = 300,
+        mu_probe: float = 200,
+        sigma_probe: float = 200,
         mu_bg: float = 100,
         sigma_bg: float = 200,
     ):
@@ -124,14 +125,12 @@ class FlowCytometryModel(DistortionModel):
     def getConditionalProbabilities(self, x: int, y: np.ndarray) -> np.ndarray:
         return np.exp(
             -((y - x * self.mu_probe - self.mu_bg) ** 2.0)
-            / (2.0 * (x * x * self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0))
-        ) / np.sqrt(
-            2 * np.pi * (x * x * self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0))
-
+            / (2.0 * (x * self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0))
+        ) / np.sqrt(2 * np.pi * (x * self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0))
 
     def sampleObservations(self, x: np.ndarray, rng=RNG) -> np.ndarray:
         ans = rng.normal(
             loc=self.mu_probe * x + self.mu_bg,
-            scale=np.sqrt(x*x*self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0),
+            scale=np.sqrt(x *  self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0),
         )
         return ans
