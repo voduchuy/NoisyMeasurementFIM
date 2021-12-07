@@ -3,7 +3,7 @@ import sys
 sys.path.append('..')
 import numpy as np
 from toggle_model import ToggleSwitchModel
-from utils.fim_utils import computeCriteria, logTransform
+from utils.fim_utils import compute_fim_functional, log_transform
 #%%
 model = ToggleSwitchModel()
 theta = np.array([model.bx,
@@ -23,7 +23,7 @@ with np.load('results/fim_marginals.npz') as _:
     fims['partial_0'] = _['fim0']
     fims['partial_1'] = _['fim1']
 for key in fims.keys():
-    logTransform(fims[key], theta)
+    log_transform(fims[key], theta)
 #%%
 def find_multiple_time_fim(dt: int, fims: np.ndarray)->np.ndarray:
     idxs = [k*dt for k in range(1, 3)]

@@ -3,7 +3,7 @@ import sys
 sys.path.append('..')
 import numpy as np
 from mapk_model import YeastModel
-from utils.fim_utils import computeCriteria, logTransform
+from utils.fim_utils import compute_fim_functional, log_transform
 #%%
 model = YeastModel()
 theta = np.array([model.k_01,
@@ -31,7 +31,7 @@ with np.load('results/fim_total_rna.npz') as _:
 with np.load('results/fim_joint_rna.npz') as _:
     fims['joint'] = _['fim']
 for key in fims.keys():
-    logTransform(fims[key], theta)
+    log_transform(fims[key], theta)
 #%%
 def find_multiple_time_fim(dt: int, fims: np.ndarray)->np.ndarray:
     """
