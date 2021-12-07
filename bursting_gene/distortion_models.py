@@ -62,59 +62,24 @@ class BinomialDistortionModel(DistortionModel):
     def getConditionalProbabilities(self, x: int, y: np.ndarray) -> np.ndarray:
         return binom.pmf(y, x, self.detectionRate)
 
+#%% Additive Poisson Noise
+from scipy.stats import poisson
 
-#%% Low-resolution image noise
-from scipy.special import comb
-
-
-class LowResolutionModel(DistortionModel):
-    # We consider spot miscounting due to low image resolution. Let $S$ be the size of the cell in terms of the pixels it occupies. Ignore for now the variability in cell sizes. Bright spots may clutter within a pixel, making the image looks like there is only one spot when there should actually be several of them.
-    #
-    # Given cell size S and n mRNA molecules, the recorded number of spots is given by the formula
-    #
-    # $$
-    # P(Y = j | S, n)
-    # =
-    # \frac
-    # {\binom{S}{j}\binom{n-1}{j-1}}
-    # {\binom{S + n - 1}{n}}
-    # $$
-    #
-    # This comes from a combinatoric problem:
-    # Given $S$ boxes and $n$ apples,
-    # how many ways are there to distribute these apples into these boxes such that there are exactly $j$ non-empty boxes.
-    def __init__(self, numPixels: int = 100):
-        """
-
-        Parameters
-        ----------
-        numPixels : int
-            number of pixels a single cell occupies.
-        """
-        self.numPixels = numPixels
+class AdditivePoissonDistortionModel(DistortionModel):
+    def __init__(self, poissonRate: float = 10.0):
+        super().__init__()
+        self.rate = poissonRate
 
     def getConditionalProbabilities(self, x: int, y: np.ndarray) -> np.ndarray:
-        return (
-            comb(self.numPixels, y)*comb(x-1, y-1)/comb(self.numPixels + x - 1, x)
-        )
-
-    def sampleObservations(self, x: np.ndarray, rng=RNG) -> np.ndarray:
-        ans = np.zeros(x.shape[0], dtype=int)
-        for i, rnaCount in enumerate(x):
-            tmp = rng.choice(self.numPixels, size=rnaCount, replace=True)
-            ans[i] = len(np.unique(tmp))
-        return ans
-
-
+        return poisson.pmf(y - x, self.rate)
 #%% Flow-cytometry measurement
-# TODO: make the variance scales linearly with x (not the std like now)
 class FlowCytometryModel(DistortionModel):
     def __init__(
         self,
-        mu_probe: float = 220,
-        sigma_probe: float = 300,
-        mu_bg: float = 100,
-        sigma_bg: float = 200,
+        mu_probe: float = 25,
+        sigma_probe: float = np.sqrt(25),
+        mu_bg: float = 200,
+        sigma_bg: float = 400,
     ):
         self.mu_probe = mu_probe
         self.sigma_probe = sigma_probe
@@ -124,14 +89,12 @@ class FlowCytometryModel(DistortionModel):
     def getConditionalProbabilities(self, x: int, y: np.ndarray) -> np.ndarray:
         return np.exp(
             -((y - x * self.mu_probe - self.mu_bg) ** 2.0)
-            / (2.0 * (x * x * self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0))
-        ) / np.sqrt(
-            2 * np.pi * (x * x * self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0))
-
+            / (2.0 * (x * self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0))
+        ) / np.sqrt(2 * np.pi * (x * self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0))
 
     def sampleObservations(self, x: np.ndarray, rng=RNG) -> np.ndarray:
         ans = rng.normal(
             loc=self.mu_probe * x + self.mu_bg,
-            scale=np.sqrt(x*x*self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0),
+            scale=np.sqrt(x * self.sigma_probe ** 2.0 + self.sigma_bg ** 2.0),
         )
         return ans

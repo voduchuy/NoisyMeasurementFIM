@@ -10,3 +10,9 @@
 *.png
 
 
+*.npz
+*.eps
+*.npz
+bursting_gene/results/fsp_solutions.npz
+bursting_gene/results/fim_exact.npz
+bursting_gene/results/bursting_parameters.npz

@@ -16,8 +16,8 @@ def plot_conf_ellipse(fim: np.ndarray,
     eigvals = eigvals[indx]
     eigvecs = eigvecs[:, indx]
 
-    mu0 = np.log10(theta[par_idx[0]])
-    mu1 = np.log10(theta[par_idx[1]])
+    mu0 = theta[par_idx[0]]
+    mu1 = theta[par_idx[1]]
     sigma0 = np.sqrt(eigvals[0])
     sigma1 = np.sqrt(eigvals[1])
     a = num_sigma * sigma0

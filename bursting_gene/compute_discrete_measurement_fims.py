@@ -1,7 +1,7 @@
 import numpy as np
 from distortion_models import (
     BinomialDistortionModel,
-    LowResolutionModel,
+    AdditivePoissonDistortionModel,
     FlowCytometryModel,
     RNG
 )
@@ -40,7 +40,7 @@ np.savez("results/fim_exact.npz", fim=fim_exact)
 #%% FIM for discrete-valued measurements
 discrete_measurements_dict = {
     "binomial": BinomialDistortionModel,
-    "lowres": LowResolutionModel
+    "poisson": AdditivePoissonDistortionModel
 }
 
 n_max = 400
