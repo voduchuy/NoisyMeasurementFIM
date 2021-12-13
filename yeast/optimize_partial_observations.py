@@ -38,11 +38,11 @@ def find_multiple_time_fim(dt: int, fims: np.ndarray)->np.ndarray:
     Compute the FIM associated with an experiment that collect cells over 2 equi-spaced time points from the FIMs associated with
     single time points.
     """
-    idxs = [k*dt for k in range(0, 5)]
+    idxs = [k*dt for k in range(1, 6)]
     return np.sum(fims[idxs], axis=0)
 #%%
 n_cells = 1000
-max_dt = 15
+max_dt = 12
 
 fim_dets = np.zeros((n_cells+1, max_dt))
 

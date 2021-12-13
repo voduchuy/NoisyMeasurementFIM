@@ -63,6 +63,7 @@ def log_transform(fims: np.ndarray, theta: np.ndarray, inplace=True)->Union[np.n
     return out
 
 
+
 if __name__ == "__main__":
     mats = np.ones((2,2,2,2))
     aopt = compute_fim_functional(mats, "a")

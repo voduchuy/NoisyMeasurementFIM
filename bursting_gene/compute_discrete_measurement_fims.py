@@ -1,9 +1,7 @@
 import numpy as np
 from distortion_models import (
     BinomialDistortionModel,
-    AdditivePoissonDistortionModel,
-    FlowCytometryModel,
-    RNG
+    AdditivePoissonDistortionModel
 )
 
 #%%
@@ -67,5 +65,35 @@ for name, noise_model in discrete_measurements_dict.items():
 
     np.savez(f"results/fim_{name}.npz", fim=fim)
     np.savez(f"results/distortion_matrix_{name}.npz", C=C, xrange=xrange, yrange=yrange)
+#%%
+discrete_measurements_dict = {
+    "binomial": BinomialDistortionModel,
+    "poisson": AdditivePoissonDistortionModel
+}
 
+n_max = 400
 
+xrange = np.arange(n_max)
+yrange = xrange
+zrange = yrange
+
+C0 = BinomialDistortionModel().getDenseMatrix(yrange, xrange)
+C1 = AdditivePoissonDistortionModel().getDenseMatrix(zrange, yrange)
+C = C1@C0
+
+fim = np.zeros((len(t_meas), 4, 4))
+for itime in range(0, len(t_meas)):
+    for ip in range(0, 4):
+        for jp in range(0, ip+1):
+            fim[itime, ip, jp] = fisher_metric(
+                rna_sensitivities[itime][ip],
+                rna_sensitivities[itime][jp],
+                rna_distributions[itime],
+                C,
+            )
+    for ip in range(0, 4):
+        for jp in range(ip + 1, 4):
+            fim[itime, ip, jp] = fim[itime, jp, ip]
+
+np.savez(f"results/fim_binomial_poisson.npz", fim=fim)
+np.savez(f"results/distortion_matrix_binomial_poisson.npz", C=C, xrange=xrange, yrange=yrange)

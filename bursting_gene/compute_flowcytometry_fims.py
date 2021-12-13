@@ -20,7 +20,7 @@ with np.load("results/fsp_solutions.npz", allow_pickle=True) as f:
     t_meas = f["t_meas"]
 #%% FIMs for continuous-valued flow cytometry measurements
 n_iterations = 4
-n_particles = 1000000
+n_particles = 100000
 
 n_par_local = n_particles // comm_size + (cpuid < (n_particles % comm_size))
 flowcyt = FlowCytometryModel()
@@ -54,5 +54,5 @@ for imc in range(n_iterations):
     fim_estimates.append(fim)
 
 if cpuid == 0:
-    np.savez(f"results/fim_flowcyt.npz", fim=fim_estimates)
+    np.savez(f"results/fim_flowcyt.npz", fim_mc=fim_estimates, fim=np.mean(fim_estimates, axis=0))
 
