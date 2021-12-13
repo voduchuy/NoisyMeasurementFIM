@@ -1,0 +1,7 @@
+Design;Optimal sampling period (minute);D-optimality information
+Joint (gene, nuclear, cytoplasmic);3;2.85e+84
+Joint (nuclear, cytoplasmic);4;7.02e+56
+Nuclear RNA;4;1.89e+21
+Cytoplasmic RNA;4;4.47e+49
+Total RNA;4;4.72e+49
+833 total RNA, 167 nuclear RNA (optimal);3;1.24e+53

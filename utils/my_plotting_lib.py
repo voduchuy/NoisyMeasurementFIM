@@ -7,7 +7,7 @@ def plot_conf_ellipse(fim: np.ndarray,
                       ax: plt.Axes,
                       par_idx: [int],
                       theta: np.ndarray,
-                      color='red', label='my_ellipse'):
+                      color='red', label='my_ellipse', ellipse_ls="-"):
     covmat = np.linalg.inv(fim)
     [eigvals, eigvecs] = np.linalg.eig(covmat[np.ix_([par_idx[0], par_idx[1]], [par_idx[0], par_idx[1]])])
 
@@ -41,12 +41,12 @@ def plot_conf_ellipse(fim: np.ndarray,
 
     r_ellipse = np.array(rot_matrix @ [ellipse_x_r, ellipse_y_r])
 
-    ax.plot(r_ellipse[0, :] + mu0, r_ellipse[1, :] + mu1, color=color, label=label)
+    ax.plot(r_ellipse[0, :] + mu0, r_ellipse[1, :] + mu1, color=color, label=label, linestyle=ellipse_ls)
 
     # Plot the major ax
-    ax.plot([mu0 - eigvecs[0, 0] * a, mu0 + eigvecs[0, 0] * a], [mu1 - eigvecs[1, 0] * a, mu1 + eigvecs[1, 0] * a],
-            color=color,
-            linestyle='--')
+    # ax.plot([mu0 - eigvecs[0, 0] * a, mu0 + eigvecs[0, 0] * a], [mu1 - eigvecs[1, 0] * a, mu1 + eigvecs[1, 0] * a],
+    #         color=color,
+    #         linestyle='--')
 
     return 0
 

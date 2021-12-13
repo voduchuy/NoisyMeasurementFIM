@@ -1,0 +1,6 @@
+Design,Optimal sampling period (minute),D-optimal information
+smFISH exact,30,5.60e+17
+smFISH missing spots,29,1.55e+17
+Flow cytometry,32,1.57e+16
+Additive Poisson noise,30,3.96e+17
+Missing spots + Additive Poisson,30,7.56e+16
