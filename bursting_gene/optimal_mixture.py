@@ -2,8 +2,8 @@
 import sys
 sys.path.append("..")
 import numpy as np
-from utils.fim_utils import compute_fim_functional, log_transform
-from common_settings import num_sampling_times, compute_combined_fim
+from utils.fim_utils import computeFimFunctional, logTransform
+from common_settings import NUM_SAMPLING_TIMES, computeCombinedFim
 
 BUDGET_MAX = 1000.0
 DT_MEASUREMENT = 30
@@ -26,11 +26,11 @@ class MeasurementMethod(object):
                 alpha = par['alpha']
                 gamma = par['gamma']
             theta = np.array([kon, koff, alpha, gamma])
-            log_transform(self.fim, theta)
+            logTransform(self.fim, theta)
 #%%
 methods = []
-methods.append(MeasurementMethod("binomial", "smFISH with random missing spots", 1.0))
-methods.append(MeasurementMethod("binomial_poisson", "smFISH with random missing spots and additive Poisson noise", 0.6))
+methods.append(MeasurementMethod("exact", "smFISH", 1.0))
+methods.append(MeasurementMethod("binomial_state_dep", "smFISH with random missing spots", 0.5))
 #%%
 for method in methods:
     method.load_fim()
@@ -42,14 +42,14 @@ obj_values = np.zeros(
                 )
 )
 component_fims = [
-    compute_combined_fim(method.fim, DT_MEASUREMENT, num_sampling_times)
+    computeCombinedFim(method.fim, DT_MEASUREMENT, NUM_SAMPLING_TIMES)
     for method in methods
 ]
 for n0 in range(obj_values.shape[0]):
     n1_max = int((BUDGET_MAX-n0*methods[0].cost)//methods[1].cost)
     for n1 in range(n1_max+1):
         fim_combined = n0*component_fims[0] + n1*component_fims[1]
-        obj_values[n0, n1] = compute_fim_functional(fim_combined, criteria=CRITERIA)
+        obj_values[n0, n1] = computeFimFunctional(fim_combined, criteria=CRITERIA)
 #%%
 opt_mixture = np.unravel_index(np.argmax(obj_values), obj_values.shape)
 fim_mix_opt = opt_mixture[0]*component_fims[0] + opt_mixture[1]*component_fims[1]

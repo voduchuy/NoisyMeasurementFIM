@@ -15,14 +15,14 @@ ncpus = comm.Get_size()
 solver = SensFspSolverMultiSinks(comm)
 solver.SetModel(
     num_parameters=4,
-    stoich_matrix = np.array(model.stoichMatrix),
-    propensity_t = None,
-    propensity_x = model.propensity_x,
-    tv_reactions = [],
-    d_propensity_t = None,
-    d_propensity_t_sp = None,
-    d_propensity_x = model.dpropensity_x,
-    d_propensity_x_sp = model.dpropx_sparsity
+    stoich_matrix=np.array(model.stoichMatrix),
+    propensity_t=None,
+    propensity_x=model.propensity_x,
+    tv_reactions=[],
+    d_propensity_t=None,
+    d_propensity_t_sp=None,
+    d_propensity_x=model.dpropensity_x,
+    d_propensity_x_sp=model.dpropx_sparsity,
 )
 solver.SetVerbosity(2)
 solver.SetFspShape(constr_fun=None, constr_bound=model.init_bounds)
@@ -40,7 +40,11 @@ for i in range(0, len(solutions)):
 
 if rank == 0:
     np.savez(
-        "results/bursting_parameters.npz", kon=model.k01, koff=model.k10, alpha=model.alpha, gamma=model.gamma
+        "results/bursting_parameters.npz",
+        kon=model.k01,
+        koff=model.k10,
+        alpha=model.alpha,
+        gamma=model.gamma,
     )
     np.savez(
         "results/fsp_solutions.npz",
