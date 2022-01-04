@@ -1,58 +1,11 @@
 import numpy as np
 from numpy.random import default_rng
+from .base import DistortionModel
 
 RNG = default_rng()
-#%%
-class DistortionModel:
-    def __init__(self):
-        pass
-
-    def getConditionalProbabilities(self, x: int, y: np.ndarray) -> np.ndarray:
-        """
-        Generate a vector of conditional probabilities.
-
-        Parameters
-        ----------
-        x :
-            the true mRNA copy number to condition on.
-        y :
-            vector of observed values to evaluate the probabilities at.
-
-        Returns
-        -------
-        p:
-            vector of conditional probabilities of y given x.
-        """
-        pass
-
-    def getDenseMatrix(self, xrange: np.ndarray, yrange: np.ndarray) -> np.ndarray:
-        """
-        Generate a dense matrix representation of the distortion operator.
-
-        Parameters
-        ----------
-        xrange :
-            Range of values for the latent mRNA copy number.
-
-        yrange :
-            Range of values for the observed mRNA copy number/intensity.
-
-        Returns
-        -------
-        out:
-            2-D array for the dense matrix with shape=(len(yrange), len(xrange)).
-        """
-        nx = len(xrange)
-        ny = len(yrange)
-        M = np.zeros((ny, nx))
-        for j, x in enumerate(xrange):
-            M[:, j] = self.getConditionalProbabilities(x, yrange)
-        return M
-
 
 #%% Binomial model
 from scipy.stats import binom
-
 
 class BinomialDistortionModel(DistortionModel):
     def __init__(self, detectionRate: float = 0.5):
@@ -62,6 +15,22 @@ class BinomialDistortionModel(DistortionModel):
     def getConditionalProbabilities(self, x: int, y: np.ndarray) -> np.ndarray:
         return binom.pmf(y, x, self.detectionRate)
 
+#%% Binomial model with state-dependent detection rate
+class BinomialVaryingDetectionRate(DistortionModel):
+    def __init__(self):
+        super().__init__()
+
+    def getConditionalProbabilities(self, x: int, y: np.ndarray) -> np.ndarray:
+        detectionRates = 1.0/(1.0 + 0.01*x)
+        return binom.pmf(y, x, detectionRates)
+#%% Binning with uniform bin widths
+class UniformBinning(DistortionModel):
+    def __init__(self, width=10):
+        super().__init__()
+        self.width = width
+
+    def getConditionalProbabilities(self, x: int, y: np.ndarray) -> np.ndarray:
+        return np.array((y*self.width <= x) & ((y+1)*self.width > x), dtype=np.double)
 #%% Additive Poisson Noise
 from scipy.stats import poisson
 

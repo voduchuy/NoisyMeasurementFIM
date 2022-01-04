@@ -2,9 +2,9 @@ import numpy as np
 from typing import Union, NoReturn
 
 
-def compute_fim_functional(fims: np.ndarray, criteria: str= "d") -> np.ndarray:
+def computeFimFunctional(fims: np.ndarray, criteria: str= "d") -> np.ndarray:
     """
-    y = compute_fim_functional(fims, criteria)
+    y = computeFimFunctional(fims, criteria)
     
     Compute optimality criteria for a collection (array) of Fisher Information Matrices. These criteria could
     either be the determinant (D-Optimality), the smallest eigenvalue (E-Optimality), or the trace
@@ -49,7 +49,7 @@ def compute_fim_functional(fims: np.ndarray, criteria: str= "d") -> np.ndarray:
     return y
 
 
-def log_transform(fims: np.ndarray, theta: np.ndarray, inplace=True)->Union[np.ndarray, NoReturn]:
+def logTransform(fims: np.ndarray, theta: np.ndarray, inplace=True)->Union[np.ndarray, NoReturn]:
     num_parameter = len(theta)
     if num_parameter != fims.shape[-1]:
         raise ValueError("Dimensions of parameter vector and the Fisher Information Matrices do not match.")
@@ -66,9 +66,9 @@ def log_transform(fims: np.ndarray, theta: np.ndarray, inplace=True)->Union[np.n
 
 if __name__ == "__main__":
     mats = np.ones((2,2,2,2))
-    aopt = compute_fim_functional(mats, "a")
-    dopt = compute_fim_functional(mats, "d")
-    eopt = compute_fim_functional(mats, "e")
+    aopt = computeFimFunctional(mats, "a")
+    dopt = computeFimFunctional(mats, "d")
+    eopt = computeFimFunctional(mats, "e")
     for i in range(2):
         for j in range(2):
             assert(aopt[i,j] == 2)

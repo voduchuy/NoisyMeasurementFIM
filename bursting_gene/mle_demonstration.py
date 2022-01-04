@@ -39,7 +39,7 @@ n_max = 2000
 C_binom = BinomialNoiseMatrix(n_max, p_success)
 
 
-def propensity_factory(theta):
+def generate_propensity_function(theta):
     def prop_t(t, out):
         out[:] = theta[:]
 
@@ -61,7 +61,7 @@ def propensity_factory(theta):
 
 def simulate_data(theta):
     """Simulate distorted SmFish observations"""
-    prop_t, prop_x = propensity_factory(theta0)
+    prop_t, prop_x = generate_propensity_function(theta0)
     ssa = SSASolver(mpi.COMM_SELF)
     ssa.SetModel(SM, prop_t, prop_x)
     data = []
@@ -73,7 +73,7 @@ def simulate_data(theta):
 
 def solve_cme(log10_theta):
     theta = np.power(10.0, log10_theta)
-    propensity_t, propensity_x = propensity_factory(theta)
+    propensity_t, propensity_x = generate_propensity_function(theta)
     cme_solver = FspSolverMultiSinks(mpi.COMM_SELF)
     cme_solver.SetVerbosity(0)
     cme_solver.SetModel(SM, propensity_t, propensity_x)
@@ -85,7 +85,7 @@ def solve_cme(log10_theta):
     return solutions
 
 def neg_loglike_wrong(log10_theta, smfishdata):
-
+# Feed the distorted data directly to the likelihood using noise-free observations
     try:
         solutions = solve_cme(log10_theta)
     except:
@@ -97,6 +97,7 @@ def neg_loglike_wrong(log10_theta, smfishdata):
     return -1.0 * ll
 
 def neg_loglike_right(log10_theta, smfishdata):
+# Propagate the CME solution through the Probabilistic Distortion Operator before evaluating likelihood
     try:
         solutions = solve_cme(log10_theta)
     except:
@@ -184,7 +185,6 @@ if RANK == 0:
     np.savez("results/ge_mle_correct_fits.npz", thetas=fits_all)
 
 # Compute fits with the incorrect likelihood function
-
 num_trials = 50
 fits_local = np.zeros((num_trials, 4))
 
