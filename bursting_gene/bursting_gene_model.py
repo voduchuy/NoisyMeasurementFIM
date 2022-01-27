@@ -10,12 +10,12 @@ _DEFAULT_PARAMETERS: Dict[str, float] = {
 
 
 class BurstingGeneModel:
-    X0 = [[1, 0, 0]]
-    P0 = [1.0]
+    X0 = np.array([[1, 0, 0]])
+    P0 = np.array([1.0])
     S0 = [0.0]
     init_bounds = np.array([1, 1, 20])
 
-    stoichMatrix = [[-1, 1, 0], [1, -1, 0], [0, 0, 1], [0, 0, -1]]
+    stoichMatrix = np.array([[-1, 1, 0], [1, -1, 0], [0, 0, 1], [0, 0, -1]])
 
     def __init__(self, parameters: Union[np.ndarray, dict] = _DEFAULT_PARAMETERS):
         if type(parameters) == dict:

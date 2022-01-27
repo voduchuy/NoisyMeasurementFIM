@@ -17,7 +17,7 @@ rng = default_rng(s)
 with np.load("results/fsp_solutions.npz", allow_pickle=True) as f:
     rna_distributions = f["rna_distributions"]
     rna_sensitivities = f["rna_sensitivities"]
-    t_meas = f["t_meas"]
+    t_meas = f["T_MEAS"]
 #%% FIMs for continuous-valued flow cytometry measurements
 n_iterations = 4
 n_particles = 100000
@@ -36,7 +36,7 @@ for imc in range(n_iterations):
         p /= np.sum(p)
         xrange = np.arange(len(p))
         xsamples = rng.choice(len(p), p=p, size=n_par_local)
-        ysamples = flowcyt.sampleObservations(xsamples, rng=rng)
+        ysamples = flowcyt.distort(xsamples, rng=rng)
         yrange, ycounts = np.unique(ysamples, return_counts=True)
         C = flowcyt.getDenseMatrix(xrange, yrange)
 

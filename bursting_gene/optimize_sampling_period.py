@@ -11,7 +11,7 @@ par_log_transform = True
 with np.load("results/fsp_solutions.npz", allow_pickle=True) as fsp_sol_file:
     rna_distributions = fsp_sol_file["rna_distributions"]
     rna_sensitivities = fsp_sol_file["rna_sensitivities"]
-    t_meas = fsp_sol_file["t_meas"]
+    t_meas = fsp_sol_file["T_MEAS"]
 
 with np.load("results/bursting_parameters.npz") as par:
     kon = par["kon"]

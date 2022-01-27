@@ -1,216 +1,202 @@
+from typing import List
+from bursting_gene_model import BurstingGeneModel
 from pypacmensl.fsp_solver.multi_sinks import FspSolverMultiSinks
 from pypacmensl.ssa.ssa import SSASolver
-from pypacmensl.smfish.snapshot import SmFishSnapshot
 import mpi4py.MPI as mpi
 import numpy as np
-from scipy.stats import binom
 import pygmo
-
-RANK = mpi.COMM_WORLD.Get_rank()
-NPROCS = mpi.COMM_WORLD.Get_size()
-np.random.seed(RANK)
-
-k_off_true = 0.015
-k_on_true = 0.05
-k_r_true = 5
-gamma_true = 0.05
-
-p_success = 0.5
-ncells = 1000
-init_bounds = np.array([1, 1, 20])
-t_meas = np.linspace(2*60/4, 2*60, 4)
-theta0 = np.array([k_on_true, k_off_true, k_r_true, gamma_true])
-SM = np.array([[-1, 1, 0], [1, -1, 0], [0, 0, 1], [0, 0, -1]])
-X0 = np.array([[1, 0, 0]])
-P0 = np.array([1.0])
-
-theta_lb = 0.001*theta0
-theta_ub = 100*theta0
-log10theta_lb = np.log10(theta_lb)
-log10theta_ub = np.log10(theta_ub)
-
-def BinomialNoiseMatrix(n_max, p_success):
-    M = np.zeros((n_max + 1, n_max + 1))
-    for j in range(0, n_max + 1):
-            M[:, j] = binom.pmf(np.linspace(0, n_max, n_max+1), j, p_success)
-    return M
-
-n_max = 2000
-C_binom = BinomialNoiseMatrix(n_max, p_success)
+from distortion_models import DistortionModel, ZeroDistortion, BinomialVaryingDetectionRate
 
 
-def generate_propensity_function(theta):
-    def prop_t(t, out):
-        out[:] = theta[:]
+def simulateData(
+    theta,
+    t_meas: np.ndarray,
+    ncells: int = 1000,
+    distortion: DistortionModel = ZeroDistortion(),
+    rng=np.random.default_rng(),
+):
+    """Simulate distorted SmFish observations
+    Arguments
+    ---------
+    theta: 1-D array
+        Array of parameters for bursting gene model, ordered as (k01, k10, transcription_rate, degradation_rate).
 
+    t_meas: 1-D array
+        Array of measurement times.
 
-    def prop_x(reaction, X, out):
-        if reaction == 0:
-            out[:] = X[:, 0]
-            return None
-        if reaction == 1:
-            out[:] = X[:, 1]
-            return None
-        if reaction == 2:
-            out[:] = X[:, 1]
-            return None
-        if reaction == 3:
-            out[:] = X[:, 2]
-            return None
-    return prop_t, prop_x
+    ncells: int
+        Number of cells per measurment time.
 
-def simulate_data(theta):
-    """Simulate distorted SmFish observations"""
-    prop_t, prop_x = generate_propensity_function(theta0)
+    distortion: DistortionModel
+        Probabilistic Distortion Operator.
+
+    Returns
+    -------
+    data: List of 1-D arrays
+        List of measured mRNA copy numbers at the input measurement times.
+    """
+    model = BurstingGeneModel(theta)
     ssa = SSASolver(mpi.COMM_SELF)
-    ssa.SetModel(SM, prop_t, prop_x)
+    ssa.SetModel(model.stoichMatrix, None, model.propensity_x)
     data = []
     for t in t_meas:
-        X = ssa.Solve(t, X0, ncells, send_to_root=True)
-        y = np.random.binomial(X[:,2], p_success)
-        data.append(SmFishSnapshot(y))
+        X = ssa.Solve(t, model.X0, ncells, send_to_root=True)
+        y = distortion.distort(X[:, 2], rng=rng)
+        data.append(y)
     return data
 
-def solve_cme(log10_theta):
+
+def solveCme(log10_theta, t_meas):
     theta = np.power(10.0, log10_theta)
-    propensity_t, propensity_x = generate_propensity_function(theta)
+    model = BurstingGeneModel(theta)
     cme_solver = FspSolverMultiSinks(mpi.COMM_SELF)
     cme_solver.SetVerbosity(0)
-    cme_solver.SetModel(SM, propensity_t, propensity_x)
-    cme_solver.SetFspShape(constr_fun=None, constr_bound=init_bounds)
-    cme_solver.SetInitialDist(X0, P0)
+    cme_solver.SetModel(model.stoichMatrix, None, model.propensity_x)
+    cme_solver.SetFspShape(constr_fun=None, constr_bound=np.array([1, 1, 20]))
+    cme_solver.SetInitialDist(model.X0, model.P0)
     cme_solver.SetUp()
-    solutions = cme_solver.SolveTspan(t_meas, 1.0E-6)
+    solutions = cme_solver.SolveTspan(t_meas, 1.0e-6)
     cme_solver.ClearState()
     return solutions
 
-def neg_loglike_wrong(log10_theta, smfishdata):
-# Feed the distorted data directly to the likelihood using noise-free observations
+
+def negLoglike(
+    log10_theta: np.ndarray, t_meas: np.ndarray, smfishdata, distortion: DistortionModel
+):
     try:
-        solutions = solve_cme(log10_theta)
+        solutions = solveCme(log10_theta, t_meas)
     except:
-        return 1.0E8
+        return 1.0e8
 
     ll = 0.0
     for i in range(0, len(t_meas)):
-        ll = ll + smfishdata[i].LogLikelihood(solutions[i], np.array([2]))
+        observations = smfishdata[i]
+        pvec_rna = solutions[i].Marginal(2)
+        C = distortion.getDenseMatrix(
+            xrange=np.arange(0, len(pvec_rna)), yrange=observations
+        )
+        pvec_observations = C @ pvec_rna
+        ll += np.sum(np.log(pvec_observations + 1.0e-16))
     return -1.0 * ll
 
-def neg_loglike_right(log10_theta, smfishdata):
-# Propagate the CME solution through the Probabilistic Distortion Operator before evaluating likelihood
-    try:
-        solutions = solve_cme(log10_theta)
-    except:
-        return 1.0E8
 
-    ll = 0.0
-    for i in range(0, len(t_meas)):
-        xobs = smfishdata[i].GetStates()
-        xobs = xobs.T
-        pobs = smfishdata[i].GetFrequencies()
-        prna = solutions[i].Marginal(2)
-        xmax = len(prna) - 1
-        py = C_binom[:, 0:xmax + 1] @ prna
-        ll = ll + np.sum(pobs*np.log( np.maximum(py[xobs], 1.0e-16) ))
-    return -1.0 * ll
-
-class my_prob_wrong:
-    def __init__(self):
+class PyGmoOptProblem:
+    def __init__(
+        self,
+        data: List[np.ndarray],
+        t_meas: np.ndarray,
+        distortion: DistortionModel,
+        par_lb: np.ndarray,
+        par_ub: np.ndarray,
+    ):
         self.dim = 4
+        self.data = data
+        self.t_meas = t_meas
+        self.distortion = distortion
+        self.lb = par_lb
+        self.ub = par_ub
+        self.rank = mpi.COMM_WORLD.Get_rank()
 
     def get_bounds(self):
-        return (log10theta_lb, log10theta_ub)
+        return (self.lb, self.ub)
 
     def fitness(self, dv):
-        fhandle = open(f'joint_data_loglike_evals_loc_opt_{RANK}.txt', 'a')
-        fhandle.write('log_theta = {0}'.format(str(dv)))
-        ll = neg_loglike_wrong(dv, data)
-        fhandle.write(f'll = {ll} \n')
+        fhandle = open(f"joint_data_loglike_evals_loc_opt_{self.rank}.txt", "a")
+        fhandle.write("log_theta = {0}".format(str(dv)))
+        ll = negLoglike(dv, self.t_meas, self.data, self.distortion)
+        fhandle.write(f"ll = {ll} \n")
         fhandle.close()
         return [ll]
 
     def gradient(self, x):
-        return pygmo.estimate_gradient(lambda x: self.fitness(x), x)  # we here use the low precision gradient
+        return pygmo.estimate_gradient(
+            lambda x: self.fitness(x), x
+        )  # we here use the low precision gradient
 
-class my_prob_right:
-    def __init__(self):
-        self.dim = 4
 
-    def get_bounds(self):
-        return (log10theta_lb, log10theta_ub)
+def mleFit(datasets, distortion_model):
+    num_datasets_local = len(datasets)
+    for itrial in range(0, num_datasets_local):
+        data = datasets[itrial]
+        prob = pygmo.problem(
+            PyGmoOptProblem(
+                data=data,
+                t_meas=T_MEAS,
+                distortion=distortion_model,
+                par_lb=log10theta_lb,
+                par_ub=log10theta_ub,
+            )
+        )
+        pop = pygmo.population(prob)
+        pop.push_back(np.log10(theta_true))
+        start_range0 = 0.01
+        my_algo = pygmo.compass_search(
+            max_fevals=20000, start_range=start_range0, stop_range=1.0e-5
+        )
+        algo = pygmo.algorithm(my_algo)
+        algo.set_verbosity(1)
+        pop = algo.evolve(pop)
+        fits_local[itrial, :] = pop.champion_x
 
-    def fitness(self, dv):
-        fhandle = open(f'correct_loglike_evals_{RANK}.txt', 'a')
-        fhandle.write('log_theta = {0}'.format(str(dv)))
-        ll = neg_loglike_right(dv, data)
-        fhandle.write(f'll = {ll} \n')
-        fhandle.close()
-        return [ll]
+    if RANK == 0:
+        fits_all = np.zeros((NUM_DATASETS, NUM_PARAMETERS))
 
-    def gradient(self, x):
-        return pygmo.estimate_gradient(lambda x: self.fitness(x), x)  # we here use the low precision gradient
-#
-POPULATION_SIZE = 1
+        buffersizes = (
+            NUM_PARAMETERS * (NUM_DATASETS // NPROCS) * np.ones((NPROCS,), dtype=int)
+        )
+        buffersizes[0 : (NUM_DATASETS % NPROCS)] += NUM_PARAMETERS
 
-# Compute fits with the correct likelihood function
+        displacements = np.zeros((NPROCS,), dtype=int)
+        displacements[1:] = np.cumsum(buffersizes[0:-1])
+    else:
+        fits_all = None
+        buffersizes = None
+        displacements = None
 
-num_trials = 50
-fits_local = np.zeros((num_trials, 4))
+    mpi.COMM_WORLD.Gatherv(
+        sendbuf=fits_local,
+        recvbuf=[fits_all, buffersizes, displacements, mpi.DOUBLE],
+        root=0,
+    )
+    return fits_all
 
-for itrial in range(0, num_trials):
-    data = simulate_data(theta0)
-    prob = pygmo.problem(my_prob_right())
-    pop = pygmo.population(prob)
-    pop.push_back(np.log10(theta0))
-    start_range0 = 0.01
-    my_algo = pygmo.compass_search(max_fevals=2000, start_range=start_range0, stop_range=1.0E-5)
-    algo = pygmo.algorithm(my_algo)
-    algo.set_verbosity(1)
-    pop = algo.evolve(pop)
-    fits_local[itrial, :] = pop.champion_x
 
-if RANK == 0:
-    fits_all = np.zeros((num_trials*NPROCS, 4))
-    buffersizes = 4*num_trials*np.ones((NPROCS,), dtype=int)
-    displacements = np.zeros((NPROCS,), dtype=int)
-    displacements[1:] = np.cumsum(buffersizes[0:-1])
-else:
-    fits_all = None
-    buffersizes = None
-    displacements = None
+if __name__ == "__main__":
+    RANK = mpi.COMM_WORLD.Get_rank()
+    NPROCS = mpi.COMM_WORLD.Get_size()
+    NUM_CELLS = 1000
+    rng = np.random.default_rng(RANK)
 
-mpi.COMM_WORLD.Gatherv(sendbuf=fits_local, recvbuf=[fits_all, buffersizes, displacements, mpi.DOUBLE], root=0)
+    NUM_DATASETS = 100
+    T_MEAS = 30.0*np.arange(1, 6)
+    NUM_PARAMETERS = 4
 
-if RANK == 0:
-    np.savez("results/ge_mle_correct_fits.npz", thetas=fits_all)
+    distortion_model = BinomialVaryingDetectionRate()
+    true_model = BurstingGeneModel()
+    theta_true = np.array(
+        [true_model.k01, true_model.k10, true_model.alpha, true_model.gamma]
+    )
+    theta_lb = 0.001 * theta_true
+    theta_ub = 1000 * theta_true
+    log10theta_lb = np.log10(theta_lb)
+    log10theta_ub = np.log10(theta_ub)
 
-# Compute fits with the incorrect likelihood function
-num_trials = 50
-fits_local = np.zeros((num_trials, 4))
+    # Simulate datasets (with distorted measurements)
+    num_datasets_local = NUM_DATASETS // NPROCS + (RANK < NUM_DATASETS % NPROCS)
+    fits_local = np.zeros((num_datasets_local, 4))
+    datasets = []
+    for itrial in range(0, num_datasets_local):
+        datasets.append(simulateData(theta_true, t_meas=T_MEAS, ncells=NUM_CELLS, distortion=distortion_model, rng=rng))
 
-for itrial in range(0, num_trials):
-    data = simulate_data(theta0)
-    prob = pygmo.problem(my_prob_wrong())
-    pop = pygmo.population(prob)
-    pop.push_back(np.log10(theta0))
-    start_range0 = 0.01
-    my_algo = pygmo.compass_search(max_fevals=2000, start_range=start_range0, stop_range=1.0E-5)
-    algo = pygmo.algorithm(my_algo)
-    algo.set_verbosity(1)
-    pop = algo.evolve(pop)
-    fits_local[itrial, :] = pop.champion_x
+    # Perform fits using the corrected likelihood function
+    fits_correct_likelihood = mleFit(datasets, distortion_model)
 
-if RANK == 0:
-    fits_all = np.zeros((num_trials*NPROCS, 4))
-    buffersizes = 4*num_trials*np.ones((NPROCS,), dtype=int)
-    displacements = np.zeros((NPROCS,), dtype=int)
-    displacements[1:] = np.cumsum(buffersizes[0:-1])
-else:
-    fits_all = None
-    buffersizes = None
-    displacements = None
+    # Perform fits using the incorrect likelihood function
+    fits_incorrect_likelihood = mleFit(datasets, ZeroDistortion())
 
-mpi.COMM_WORLD.Gatherv(sendbuf=fits_local, recvbuf=[fits_all, buffersizes, displacements, mpi.DOUBLE], root=0)
-
-if RANK == 0:
-    np.savez("results/ge_mle_misfits.npz", thetas=fits_all)
+    if RANK == 0:
+        np.savez(
+            "results/ge_mle_fits.npz",
+            fits_correct=fits_correct_likelihood,
+            fits_incorrect=fits_incorrect_likelihood,
+        )

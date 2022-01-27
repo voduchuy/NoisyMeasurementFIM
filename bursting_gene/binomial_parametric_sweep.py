@@ -11,7 +11,7 @@ from common_settings import computeFimEntry, computeSingleObservationFim
 with np.load("results/fsp_solutions.npz", allow_pickle=True) as f:
     rna_distributions = f["rna_distributions"]
     rna_sensitivities = f["rna_sensitivities"]
-    t_meas = f["t_meas"]
+    t_meas = f["T_MEAS"]
 
 with np.load('results/bursting_parameters.npz') as par:
     kon = par['kon']
