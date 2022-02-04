@@ -34,7 +34,7 @@ if __name__ == "__main__":
     tau_choices = [300, 3600, 7200]
 
     # Generate the global grid of birth and death rates
-    nodes_per_axis = 5
+    nodes_per_axis = 100
     birth_nodes = np.logspace(-4.0, 0.0, nodes_per_axis)
     death_nodes = np.logspace(-4.0, -1.0, nodes_per_axis)
     bb, dd = np.meshgrid(birth_nodes, death_nodes, indexing="ij")
