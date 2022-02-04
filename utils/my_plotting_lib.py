@@ -73,5 +73,9 @@ def plot_barcodes(fim_mats: [np.ndarray],
 from string import ascii_uppercase
 
 def label_axes(axs: [plt.Axes]):
-    for i, ax in enumerate(list(axs.flatten())):
+    if type(axs) == np.ndarray:
+        axlist = axs.flatten()
+    else:
+        axlist = axs
+    for i, ax in enumerate(axlist):
         ax.set_title(ascii_uppercase[i])

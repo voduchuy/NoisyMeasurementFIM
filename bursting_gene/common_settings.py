@@ -33,7 +33,7 @@ def computeSingleObservationFim(distributions, sensitivities, distortionMatrix=N
                     distributions[itime],
                     distortionMatrix,
                 )
-        for ip in range(0, 4):
-            for jp in range(ip + 1, 4):
+        for ip in range(0, numParameters):
+            for jp in range(ip + 1, numParameters):
                 fim[itime, ip, jp] = fim[itime, jp, ip]
     return fim
