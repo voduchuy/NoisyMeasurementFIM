@@ -19,7 +19,6 @@ def computePointwiseFim(birth: float, death: float, tau: float):
     pvecs = [sol.Marginal(0) for sol in solutions]
     svecs = [(sol.SensMarginal(0, 0), sol.SensMarginal(1, 0)) for sol in solutions]
     xmax = max([len(v) for v in pvecs])
-    print(xmax)
     C = distortion.getDenseMatrix(np.arange(xmax), np.arange(xmax))
     return computeSingleObservationFim(pvecs, svecs, C)
 
@@ -34,7 +33,7 @@ if __name__ == "__main__":
     tau_choices = [300, 3600, 7200]
 
     # Generate the global grid of birth and death rates
-    nodes_per_axis = 100
+    nodes_per_axis = 5
     birth_nodes = np.logspace(-4.0, 0.0, nodes_per_axis)
     death_nodes = np.logspace(-4.0, -1.0, nodes_per_axis)
     bb, dd = np.meshgrid(birth_nodes, death_nodes, indexing="ij")
@@ -50,11 +49,13 @@ if __name__ == "__main__":
     nn_loc = nn_loc_layout[cpuid]
     brange_loc = brange_loc_layout[cpuid]
 
-    fims_loc = np.zeros((nn_loc, nodes_per_axis, len(tau_choices), 3, 2, 2), dtype=np.double)
+    fims_loc = np.zeros(
+        (nn_loc, nodes_per_axis, len(tau_choices), 3, 2, 2), dtype=np.double
+    )
     for i in range(nn_loc):
         for j in range(nodes_per_axis):
             for it, tau in enumerate(tau_choices):
-                print(i, j, it)
+                print(i + brange_loc, j, it)
                 fims_loc[i, j, it, :, :, :] = computePointwiseFim(
                     bb[i + brange_loc, j], dd[i + brange_loc, j], tau
                 )
@@ -63,10 +64,10 @@ if __name__ == "__main__":
     sc = np.prod(fims_loc.shape[1:])
     if cpuid == 0:
         fims = np.zeros((nodes_per_axis, nodes_per_axis, len(tau_choices), 3, 2, 2))
-        recv_buf = (fims, sc*nn_loc_layout, sc*brange_loc_layout, mpi.DOUBLE)
+        recv_buf = (fims, sc * nn_loc_layout, sc * brange_loc_layout, mpi.DOUBLE)
     else:
         recv_buf = None
-    send_buf = (fims_loc, sc*nn_loc, mpi.DOUBLE)
+    send_buf = (fims_loc, sc * nn_loc, mpi.DOUBLE)
     comm.Gatherv(send_buf, recv_buf)
 
     if cpuid == 0:

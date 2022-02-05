@@ -24,14 +24,16 @@ def poissonStationary(
 
 
 class BirthDeath(object):
-    def __init__(self, birth: float=1.0, death: float=1.0):
+    def __init__(self, birth: float = 1.0, death: float = 1.0):
         self.birth = birth
         self.death = death
         self.stoich_matrix = np.array([[1], [-1]])
 
-        off_rate = 0.1E0
+        t_halflife = 1800 # We will let birth rate be reduced by half in 30 minutes
+        ln2 = np.log(2)
+
         def propensity_tv(t: float, out: np.ndarray):
-            out[0] = np.exp(-off_rate*t)
+            out[0] = np.exp(-ln2 * t/t_halflife)
 
         def propensity(reaction: int, x: np.ndarray, out: np.ndarray):
             if reaction == 0:
@@ -39,10 +41,6 @@ class BirthDeath(object):
             else:
                 out[:] = self.death * x[:, 0]
             return None
-
-        def dpropensity_tv(par_idx: int, t: float, out: np.ndarray):
-            if par_idx == 0:
-                out[0] = np.exp(-off_rate*t)
 
         def dpropensity(par: int, reaction: int, x: np.ndarray, out: np.ndarray):
             if par == 0:
@@ -54,8 +52,8 @@ class BirthDeath(object):
             return None
 
         self.propensity_tv = propensity_tv
-        self.dpropensity_tv = dpropensity_tv
-        self.dpropensity_t_sp = [[0], []]
+        self.dpropensity_tv = None
+        self.dpropensity_t_sp = None
         self.propensity = propensity
         self.dpropensity = dpropensity
         self.dpropensity_sp = [[0], [1]]
@@ -63,7 +61,7 @@ class BirthDeath(object):
         n = 100
         while True:
             p0, s0_b, s0_d = poissonStationary(self.birth, self.death, n=n)
-            if 1.0 - np.sum(p0) > 1.0E-10:
+            if 1.0 - np.sum(p0) > 1.0e-10:
                 n += 50
             else:
                 break
@@ -146,6 +144,6 @@ if __name__ == "__main__":
     p, sb, sd = sensfspBirthDeathStationary(birth, death)
     pexact, sbexact, sdexact = poissonStationary(birth, death, n=len(p))
 
-    print(norm(p-pexact, 1))
+    print(norm(p - pexact, 1))
     print(norm(sb - sbexact, 1))
     print(norm(sd - sdexact, 1))
