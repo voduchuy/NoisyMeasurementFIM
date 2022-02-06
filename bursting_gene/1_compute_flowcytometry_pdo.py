@@ -1,5 +1,7 @@
+import sys
+sys.path.append("")
 import numpy as np
-from distortion_models import FlowCytometryModel
+from bursting_gene.distortion_models import FlowCytometryModel
 
 flowcyt_model = FlowCytometryModel()
 xrange = np.arange(0, 200)

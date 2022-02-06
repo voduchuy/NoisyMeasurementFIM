@@ -181,7 +181,7 @@ if __name__ == "__main__":
     log10theta_lb = np.log10(theta_lb)
     log10theta_ub = np.log10(theta_ub)
 
-    # Simulate datasets (with distorted measurements)
+    # Simulate distorted_datasets (with distorted measurements)
     num_datasets_local = NUM_DATASETS // NPROCS + (RANK < NUM_DATASETS % NPROCS)
     fits_local = np.zeros((num_datasets_local, 4))
     datasets = []

@@ -66,6 +66,12 @@ class DistortionModel:
         """
         raise RuntimeError("Not implemented.")
 
+    def transformDistribution(self, pvec: np.ndarray) -> np.ndarray:
+        raise RuntimeError("Not implemented.")
+
+    def transformSensitivity(self, pvec: np.ndarray, svec: np.ndarray) -> np.ndarray:
+        raise RuntimeError("Not implemented.")
+
 #%%
 class ZeroDistortion(DistortionModel):
     def __init__(self):
@@ -131,3 +137,9 @@ class ZeroDistortion(DistortionModel):
             Sampled distorted measurements, out[i] is the distorted version of x[i].
         """
         return np.copy(x)
+
+    def transformDistribution(self, pvec: np.ndarray) -> np.ndarray:
+        return np.copy(pvec)
+
+    def transformSensitivity(self, pvec: np.ndarray, svec: np.ndarray) -> np.ndarray:
+        return np.copy(svec)

@@ -3,7 +3,8 @@ import numpy as np
 # Number of sampling times in the experiment design. These times are equally spaced and the gap is a variable to be
 # optimized for maximal information
 NUM_SAMPLING_TIMES = 5
-
+NUM_CELLS_FISH = 1000
+NUM_CELLS_FLOW = 1000
 
 def computeCombinedFim(fim_array, dt, num_times):
     t_idx = dt * np.arange(1, num_times+1)
@@ -37,3 +38,5 @@ def computeSingleObservationFim(distributions, sensitivities, distortionMatrix=N
             for jp in range(ip + 1, numParameters):
                 fim[itime, ip, jp] = fim[itime, jp, ip]
     return fim
+
+
