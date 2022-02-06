@@ -1,3 +1,4 @@
+import sys
 from typing import List
 from bursting_gene_model import BurstingGeneModel
 from pypacmensl.fsp_solver.multi_sinks import FspSolverMultiSinks
@@ -101,11 +102,7 @@ class PyGmoOptProblem:
         return (self.lb, self.ub)
 
     def fitness(self, dv):
-        fhandle = open(f"joint_data_loglike_evals_loc_opt_{self.rank}.txt", "a")
-        fhandle.write("log_theta = {0}".format(str(dv)))
         ll = negLoglike(dv, self.t_meas, self.data, self.distortion)
-        fhandle.write(f"ll = {ll} \n")
-        fhandle.close()
         return [ll]
 
     def gradient(self, x):
@@ -139,12 +136,12 @@ def mleFit(datasets, distortion_model):
         fits_local[itrial, :] = pop.champion_x
 
     if RANK == 0:
-        fits_all = np.zeros((NUM_DATASETS, NUM_PARAMETERS))
+        fits_all = np.zeros((dataset_count, NUM_PARAMETERS))
 
         buffersizes = (
-            NUM_PARAMETERS * (NUM_DATASETS // NPROCS) * np.ones((NPROCS,), dtype=int)
+                NUM_PARAMETERS * (dataset_count // NPROCS) * np.ones((NPROCS,), dtype=int)
         )
-        buffersizes[0 : (NUM_DATASETS % NPROCS)] += NUM_PARAMETERS
+        buffersizes[0 : (dataset_count % NPROCS)] += NUM_PARAMETERS
 
         displacements = np.zeros((NPROCS,), dtype=int)
         displacements[1:] = np.cumsum(buffersizes[0:-1])
@@ -164,12 +161,28 @@ def mleFit(datasets, distortion_model):
 if __name__ == "__main__":
     RANK = mpi.COMM_WORLD.Get_rank()
     NPROCS = mpi.COMM_WORLD.Get_size()
-    NUM_CELLS = 1000
     rng = np.random.default_rng(RANK)
 
-    NUM_DATASETS = 100
-    T_MEAS = 30.0*np.arange(1, 6)
+    ARGV = sys.argv
+    # %% Options for the optimization run
+    options = {
+        "cell_count": 100,
+        "dataset_count": 100
+    }
+    # %% Parse command line arguments
+    for i in range(1, len(ARGV)):
+        key, value = ARGV[i].split("=")
+        if key in options:
+            options[key] = int(value)
+        else:
+            print(f"WARNING: Unknown option {key} \n")
+
+    dataset_count = options["dataset_count"]
+    cell_count = options["cell_count"]
+
     NUM_PARAMETERS = 4
+
+    T_MEAS = 30.0*np.arange(1, 6)
 
     distortion_model = BinomialVaryingDetectionRate()
     true_model = BurstingGeneModel()
@@ -182,11 +195,11 @@ if __name__ == "__main__":
     log10theta_ub = np.log10(theta_ub)
 
     # Simulate distorted_datasets (with distorted measurements)
-    num_datasets_local = NUM_DATASETS // NPROCS + (RANK < NUM_DATASETS % NPROCS)
-    fits_local = np.zeros((num_datasets_local, 4))
+    local_dataset_count = dataset_count // NPROCS + (RANK < dataset_count % NPROCS)
+    fits_local = np.zeros((local_dataset_count, 4))
     datasets = []
-    for itrial in range(0, num_datasets_local):
-        datasets.append(simulateData(theta_true, t_meas=T_MEAS, ncells=NUM_CELLS, distortion=distortion_model, rng=rng))
+    for itrial in range(0, local_dataset_count):
+        datasets.append(simulateData(theta_true, t_meas=T_MEAS, ncells=cell_count, distortion=distortion_model, rng=rng))
 
     # Perform fits using the corrected likelihood function
     fits_correct_likelihood = mleFit(datasets, distortion_model)
