@@ -1,3 +1,4 @@
+import sys
 from typing import List
 from bursting_gene_model import BurstingGeneModel
 from pypacmensl.fsp_solver.multi_sinks import FspSolverMultiSinks
@@ -117,7 +118,7 @@ def solveSensCme(log10_theta, t_meas):
     cme_solver.SetFspShape(constr_fun=None, constr_bound=np.array([1, 1, 20]))
     cme_solver.SetInitialDist(model.X0, model.P0)
     cme_solver.SetUp()
-    solutions = cme_solver.SolveTspan(t_meas, 1.0e-6)
+    solutions = cme_solver.SolveTspan(t_meas, 1.0e-8)
     cme_solver.ClearState()
     return solutions
 
@@ -213,11 +214,7 @@ class PyGmoOptProblem:
         return (self.lb, self.ub)
 
     def fitness(self, dv):
-        fhandle = open(f"joint_data_loglike_evals_loc_opt_{self.rank}.txt", "a")
-        fhandle.write("log_theta = {0}".format(str(dv)))
         ll = negLoglike(dv, self.t_meas, self.data, self.distortion)
-        fhandle.write(f"ll = {ll} \n")
-        fhandle.close()
         return [ll]
 
     def gradient(self, x):
@@ -230,6 +227,7 @@ def mleFit(datasets, distortion_model):
     num_datasets_local = len(datasets)
     fits_local = np.zeros((num_datasets_local, 4))
     for itrial in range(0, num_datasets_local):
+        print(f"FITTING DATASET {itrial}...")
         data = datasets[itrial]
         prob = pygmo.problem(
             PyGmoOptProblem(
@@ -253,12 +251,12 @@ def mleFit(datasets, distortion_model):
         fits_local[itrial, :] = pop.champion_x
 
     if RANK == 0:
-        fits_all = np.zeros((NUM_DATASETS, NUM_PARAMETERS))
+        fits_all = np.zeros((dataset_count, NUM_PARAMETERS))
 
         buffersizes = (
-            NUM_PARAMETERS * (NUM_DATASETS // NPROCS) * np.ones((NPROCS,), dtype=int)
+                NUM_PARAMETERS * (dataset_count // NPROCS) * np.ones((NPROCS,), dtype=int)
         )
-        buffersizes[0 : (NUM_DATASETS % NPROCS)] += NUM_PARAMETERS
+        buffersizes[0 : (dataset_count % NPROCS)] += NUM_PARAMETERS
 
         displacements = np.zeros((NPROCS,), dtype=int)
         displacements[1:] = np.cumsum(buffersizes[0:-1])
@@ -278,10 +276,24 @@ def mleFit(datasets, distortion_model):
 if __name__ == "__main__":
     RANK = mpi.COMM_WORLD.Get_rank()
     NPROCS = mpi.COMM_WORLD.Get_size()
-    NUM_CELLS = 100
-    rng = np.random.default_rng(RANK)
+    ARGV = sys.argv
+    # %% Options for the optimization run
+    options = {
+        "cell_count": 100,
+        "dataset_count": 100
+    }
+    # %% Parse command line arguments
+    for i in range(1, len(ARGV)):
+        key, value = ARGV[i].split("=")
+        if key in options:
+            options[key] = int(value)
+        else:
+            print(f"WARNING: Unknown option {key} \n")
 
-    NUM_DATASETS = 100
+    dataset_count = options["dataset_count"]
+    cell_count = options["cell_count"]
+#%%
+    rng = np.random.default_rng(RANK)
     T_MEAS = 30.0 * np.arange(1, 6)
     NUM_PARAMETERS = 4
 
@@ -297,26 +309,26 @@ if __name__ == "__main__":
     #%%
     # Simulate distorted_datasets (with distorted measurements) and perform fits to the distorted data using the corrected likelihood function
     distortion_model = DoubleCell(rho=1.0)
-    num_datasets_local = NUM_DATASETS // NPROCS + (RANK < NUM_DATASETS % NPROCS)
+    local_dataset_count = dataset_count // NPROCS + (RANK < dataset_count % NPROCS)
     distorted_datasets = []
-    for itrial in range(0, num_datasets_local):
+    for itrial in range(0, local_dataset_count):
         distorted_datasets.append(
             simulateDoubledData(
                 theta_true,
                 t_meas=T_MEAS,
-                ncells=NUM_CELLS,
+                ncells=cell_count,
             )
         )
     distorted_data_fits = mleFit(distorted_datasets, distortion_model)
     #%%
     # Simulate distorted_datasets (with distorted measurements) and perform fits to the distorted data using the corrected likelihood function
     exact_datasets = []
-    for itrial in range(0, num_datasets_local):
+    for itrial in range(0, local_dataset_count):
         exact_datasets.append(
             simulateExactData(
                 theta_true,
                 t_meas=T_MEAS,
-                ncells=NUM_CELLS,
+                ncells=cell_count,
             )
         )
     exact_data_fits = mleFit(exact_datasets, ZeroDistortion())
