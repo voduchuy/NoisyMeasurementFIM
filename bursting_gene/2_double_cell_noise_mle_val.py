@@ -28,9 +28,6 @@ def simulateExactData(
     ncells: int
         Number of cells per measurment time.
 
-    distortion: DistortionModel
-        Probabilistic Distortion Operator.
-
     Returns
     -------
     data: List of 1-D arrays
@@ -64,9 +61,6 @@ def simulateDoubledData(
 
     ncells: int
         Number of cells per measurment time.
-
-    distortion: DistortionModel
-        Probabilistic Distortion Operator.
 
     Returns
     -------
@@ -223,6 +217,8 @@ class PyGmoOptProblem:
         return grad
 
 
+
+
 def mleFit(datasets, distortion_model):
     num_datasets_local = len(datasets)
     fits_local = np.zeros((num_datasets_local, 4))
@@ -241,10 +237,10 @@ def mleFit(datasets, distortion_model):
         pop = pygmo.population(prob)
         pop.push_back(np.log10(theta_true))
         start_range0 = 0.01
-        # my_algo = pygmo.compass_search(
-        #     max_fevals=20000, start_range=start_range0, stop_range=1.0e-5
-        # )
-        my_algo = pygmo.scipy_optimize(method="L-BFGS-B", tol=1.0E-5)
+        my_algo = pygmo.compass_search(
+            max_fevals=20000, start_range=start_range0, stop_range=1.0e-5
+        )
+        # my_algo = pygmo.scipy_optimize(method="L-BFGS-B", tol=1.0E-7)
         algo = pygmo.algorithm(my_algo)
         algo.set_verbosity(1)
         pop = algo.evolve(pop)
