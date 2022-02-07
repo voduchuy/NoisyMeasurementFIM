@@ -88,7 +88,7 @@ def solveCme(log10_theta, t_meas):
     cme_solver.SetFspShape(constr_fun=None, constr_bound=np.array([1, 1, 20]))
     cme_solver.SetInitialDist(model.X0, model.P0)
     cme_solver.SetUp()
-    solutions = cme_solver.SolveTspan(t_meas, 1.0e-6)
+    solutions = cme_solver.SolveTspan(t_meas, 1.0e-8)
     cme_solver.ClearState()
     return solutions
 
@@ -288,7 +288,7 @@ if __name__ == "__main__":
 
     dataset_count = options["dataset_count"]
     cell_count = options["cell_count"]
-#%%
+    # %%
     rng = np.random.default_rng(RANK)
     T_MEAS = 30.0 * np.arange(1, 6)
     NUM_PARAMETERS = 4
