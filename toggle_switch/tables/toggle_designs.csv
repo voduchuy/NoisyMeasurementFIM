@@ -1,6 +1,6 @@
 Design,Optimal time (minute),D-optimal information
-"1000 joint (X,Y)",281,4.13e+32
-1000 X,203,2.92e+10
-1000 Y,342,5.92e+13
-500 X and 500 Y,158,3.81e+27
-1000 X and 1000 Y,158,3.90e+30
+"1000 joint (LacI,$\lambda$cI)",281,4.13e+32
+1000 LacI,203,2.92e+10
+1000 $\lambda$cI,342,5.92e+13
+500 LacI and 500 $\lambda$cI,158,3.81e+27
+1000 LacI and 1000 $\lambda$cI,158,3.90e+30

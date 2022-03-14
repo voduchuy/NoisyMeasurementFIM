@@ -46,8 +46,8 @@ class AdditivePoissonDistortionModel(DistortionModel):
 
     def getConditionalProbabilities(self, x: int, y: np.ndarray) -> np.ndarray:
         return poisson.pmf(y - x, self.rate)
-#%% Flow-cytometry measurement
-class FlowCytometryModel(DistortionModel):
+#%% Integrated intensity measurement
+class IntegratedIntensityModel(DistortionModel):
     def __init__(
         self,
         mu_probe: float = 25,

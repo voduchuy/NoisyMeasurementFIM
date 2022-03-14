@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append("")
+sys.path.append("..")
 import numpy as np
 from bursting_gene.distortion_models import (
     BinomialDistortionModel,
@@ -39,9 +39,9 @@ for name, noise_model in discrete_measurements_dict.items():
         sensitivities=rna_sensitivities,
         distortionMatrix=C,
     )
-    np.savez(f"../results/fim_{name}.npz", fim=fim)
+    np.savez(f"results/fim_{name}.npz", fim=fim)
     np.savez(
-        f"../results/distortion_matrix_{name}.npz", C=C, xrange=xrange, yrange=yrange
+        f"results/distortion_matrix_{name}.npz", C=C, xrange=xrange, yrange=yrange
     )
 #%%
 discrete_measurements_dict = {

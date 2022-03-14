@@ -1,7 +1,7 @@
 import numpy as np
 import mpi4py.MPI as mpi
 from distortion_models import (
-    FlowCytometryModel
+    IntegratedIntensityModel
 )
 from numpy.random import SeedSequence, default_rng
 
@@ -23,7 +23,7 @@ n_iterations = 4
 n_particles = 100000
 
 n_par_local = n_particles // comm_size + (cpuid < (n_particles % comm_size))
-flowcyt = FlowCytometryModel()
+flowcyt = IntegratedIntensityModel()
 fim_estimates = []
 tmp = np.zeros((1,))
 buf = np.zeros((1,))

@@ -68,7 +68,7 @@ for meas_type in fim_multi_cells.keys():
 #%%
 opt_rates = dict()
 for meas in fim_multi_cells_times.keys():
-    opt_rates[meas] = np.argmax(det_fim_multi_cells_times[meas])
+    opt_rates[meas] = np.argmax(det_fim_multi_cells_times[meas])+1
     print(
         f"Optimal sampling period for {meas} is {opt_rates[meas]} "
         f"min with D-opt={det_fim_multi_cells_times[meas][opt_rates[meas]]}."

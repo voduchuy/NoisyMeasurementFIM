@@ -181,7 +181,8 @@ def negLoglikeGradient(
         ]
 
         grad_here = [
-            np.sum(svec[observations] / (pvec_distorted[observations] + 1.0e-16)) for svec in svecs_distorted
+            np.sum(svec[observations] / (pvec_distorted[observations] + 1.0e-16))
+            for svec in svecs_distorted
         ] / (10.0**log10_theta)
         ll_grad += np.array(grad_here)
     return -1.0 * ll_grad
@@ -217,8 +218,6 @@ class PyGmoOptProblem:
         return grad
 
 
-
-
 def mleFit(datasets, distortion_model):
     num_datasets_local = len(datasets)
     fits_local = np.zeros((num_datasets_local, 4))
@@ -250,7 +249,7 @@ def mleFit(datasets, distortion_model):
         fits_all = np.zeros((dataset_count, NUM_PARAMETERS))
 
         buffersizes = (
-                NUM_PARAMETERS * (dataset_count // NPROCS) * np.ones((NPROCS,), dtype=int)
+            NUM_PARAMETERS * (dataset_count // NPROCS) * np.ones((NPROCS,), dtype=int)
         )
         buffersizes[0 : (dataset_count % NPROCS)] += NUM_PARAMETERS
 
@@ -274,10 +273,7 @@ if __name__ == "__main__":
     NPROCS = mpi.COMM_WORLD.Get_size()
     ARGV = sys.argv
     # %% Options for the optimization run
-    options = {
-        "cell_count": 100,
-        "dataset_count": 100
-    }
+    options = {"cell_count": 100, "dataset_count": 100}
     # %% Parse command line arguments
     for i in range(1, len(ARGV)):
         key, value = ARGV[i].split("=")

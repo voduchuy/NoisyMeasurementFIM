@@ -26,7 +26,7 @@ for key in fims.keys():
     logTransform(fims[key], theta)
 #%%
 n_cells = 1000
-max_dt = 200
+max_dt = 480
 
 fim_dets = np.zeros((n_cells+1, max_dt))
 

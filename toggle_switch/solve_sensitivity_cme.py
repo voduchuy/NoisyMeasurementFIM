@@ -22,7 +22,7 @@ solver.SetModel(
     d_propensity_x=model.dpropx,
     d_propensity_x_sp=model.dpropx_sparsity
 )
-solver.SetVerbosity(2)
+solver.SetVerbosity(0)
 solver.SetFspShape(constr_fun=None, constr_bound=model.init_bounds)
 solver.SetInitialDist(np.array(model.X0), np.array(model.P0), [np.array(model.S0)] * model.NUM_PARAMETERS)
 solution0 = solver.Solve(24*3600, 1.0E-6)
