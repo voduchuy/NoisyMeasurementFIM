@@ -7,7 +7,7 @@ bioRxiv 2021.05.11.443611;
 
 ## Dependencies
 C++ and Cython:
-- CME solvers: PACMENSL and PyPACMENSL (only for the FSP solutions).
+- CME solvers: [PACMENSL](https://github.com/voduchuy/pacmensl) and PyPACMENSL (only for the FSP solutions).
 
 Python:
 - PyGMO 2 (for MLE validations only).
