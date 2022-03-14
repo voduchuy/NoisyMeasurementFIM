@@ -8,7 +8,7 @@ from common_settings import computeFimEntry, computeSingleObservationFim, NUM_SA
 with np.load("results/fsp_solutions.npz", allow_pickle=True) as f:
     rna_distributions = f["rna_distributions"]
     rna_sensitivities = f["rna_sensitivities"]
-    t_meas = f["t_meas"]
+    t_meas = f["T_MEAS"]
 with np.load("results/smfish_probe_distortions.npz", allow_pickle=True) as _:
     probeLevels = _["levels"]
     pdos = _["pdos"][()]

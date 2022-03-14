@@ -2,12 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 
-def plot_conf_ellipse(fim: np.ndarray,
-                      num_sigma: int,
-                      ax: plt.Axes,
-                      par_idx: [int],
-                      theta: np.ndarray,
-                      color='red', label='my_ellipse', ellipse_ls="-"):
+def plotConfidenceEllipse(fim: np.ndarray,
+                          num_sigma: int,
+                          ax: plt.Axes,
+                          par_idx: [int],
+                          theta: np.ndarray,
+                          color='red', label='my_ellipse', ellipse_ls="-"):
     covmat = np.linalg.inv(fim)
     [eigvals, eigvecs] = np.linalg.eig(covmat[np.ix_([par_idx[0], par_idx[1]], [par_idx[0], par_idx[1]])])
 
@@ -51,10 +51,10 @@ def plot_conf_ellipse(fim: np.ndarray,
     return 0
 
 
-def plot_barcodes(fim_mats: [np.ndarray],
-                  labels: [str],
-                  colors: [str],
-                  ax: plt.Axes):
+def plotBarcodes(fim_mats: [np.ndarray],
+                 labels: [str],
+                 colors: [str],
+                 ax: plt.Axes):
     # The uncertainties in eigendirections of different experiments
     for i in range(0, len(fim_mats)):
         [eigval, eigvec] = np.linalg.eig(fim_mats[i])
@@ -72,6 +72,10 @@ def plot_barcodes(fim_mats: [np.ndarray],
 
 from string import ascii_uppercase
 
-def label_axes(axs: [plt.Axes]):
-    for i, ax in enumerate(list(axs.flatten())):
+def labelAxes(axs: [plt.Axes]):
+    if type(axs) == np.ndarray:
+        axlist = axs.flatten()
+    else:
+        axlist = axs
+    for i, ax in enumerate(axlist):
         ax.set_title(ascii_uppercase[i])

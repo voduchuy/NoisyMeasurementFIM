@@ -1,9 +1,8 @@
 import sys
-
 sys.path.append("..")
 import numpy as np
+from bursting_gene.common_settings import NUM_CELLS_FISH, NUM_CELLS_FLOW, NUM_SAMPLING_TIMES, computeCombinedFim
 from utils.fim_utils import computeFimFunctional, logTransform
-from common_settings import NUM_SAMPLING_TIMES, computeCombinedFim
 
 # %%
 par_log_transform = True
@@ -39,14 +38,13 @@ if par_log_transform:
     for fim in fim_single_cell.values():
         logTransform(fim, theta)
 #%% D-optimal sampling periods for different types of measurements
-ncells_smfish = 1000
-ncells_flowcyt = 1000
+
 
 fim_multi_cells = dict()
 
 for meas_type in fim_single_cell.keys():
-    fim_multi_cells[meas_type] = ncells_smfish * fim_single_cell[meas_type]
-fim_multi_cells["flowcyt"] = ncells_flowcyt * fim_single_cell["flowcyt"]
+    fim_multi_cells[meas_type] = NUM_CELLS_FISH * fim_single_cell[meas_type]
+fim_multi_cells["flowcyt"] = NUM_CELLS_FLOW * fim_single_cell["flowcyt"]
 
 dt_min = 1
 dt_max = int(np.floor(t_meas[-1] / NUM_SAMPLING_TIMES))
@@ -70,7 +68,7 @@ for meas_type in fim_multi_cells.keys():
 #%%
 opt_rates = dict()
 for meas in fim_multi_cells_times.keys():
-    opt_rates[meas] = np.argmax(det_fim_multi_cells_times[meas])
+    opt_rates[meas] = np.argmax(det_fim_multi_cells_times[meas])+1
     print(
         f"Optimal sampling period for {meas} is {opt_rates[meas]} "
         f"min with D-opt={det_fim_multi_cells_times[meas][opt_rates[meas]]}."

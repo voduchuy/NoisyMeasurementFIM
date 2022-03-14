@@ -1,5 +1,6 @@
-import numpy as np
 from typing import Union, Dict
+
+import numpy as np
 
 _DEFAULT_PARAMETERS: Dict[str, float] = {
     "k01": 0.05,
@@ -10,12 +11,12 @@ _DEFAULT_PARAMETERS: Dict[str, float] = {
 
 
 class BurstingGeneModel:
-    X0 = [[1, 0, 0]]
-    P0 = [1.0]
+    X0 = np.array([[1, 0, 0]])
+    P0 = np.array([1.0])
     S0 = [0.0]
     init_bounds = np.array([1, 1, 20])
 
-    stoichMatrix = [[-1, 1, 0], [1, -1, 0], [0, 0, 1], [0, 0, -1]]
+    stoichMatrix = np.array([[-1, 1, 0], [1, -1, 0], [0, 0, 1], [0, 0, -1]])
 
     def __init__(self, parameters: Union[np.ndarray, dict] = _DEFAULT_PARAMETERS):
         if type(parameters) == dict:
@@ -35,16 +36,16 @@ class BurstingGeneModel:
 
         def propensity_x(reaction, X, out):
             if reaction == 0:
-                out[:] = self.k01*X[:, 0]
+                out[:] = self.k01 * X[:, 0]
                 return None
             if reaction == 1:
-                out[:] = self.k10*X[:, 1]
+                out[:] = self.k10 * X[:, 1]
                 return None
             if reaction == 2:
-                out[:] = self.alpha*X[:, 1]
+                out[:] = self.alpha * X[:, 1]
                 return None
             if reaction == 3:
-                out[:] = self.gamma*X[:, 2]
+                out[:] = self.gamma * X[:, 2]
                 return None
 
         def d_prop_x(par_idx, reaction, X, out):
@@ -67,6 +68,3 @@ class BurstingGeneModel:
         self.propensity_x = propensity_x
         self.dpropensity_t = None
         self.dpropensity_x = d_prop_x
-
-
-

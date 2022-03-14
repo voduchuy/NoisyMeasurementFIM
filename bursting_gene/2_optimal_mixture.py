@@ -3,7 +3,7 @@ import sys
 sys.path.append("..")
 import numpy as np
 from utils.fim_utils import computeFimFunctional, logTransform
-from common_settings import NUM_SAMPLING_TIMES, computeCombinedFim
+from bursting_gene.common_settings import NUM_SAMPLING_TIMES, computeCombinedFim
 
 BUDGET_MAX = 1000.0
 DT_MEASUREMENT = 30
