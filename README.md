@@ -1,7 +1,7 @@
 # NoisyMeasurementFIM
 Code to reproduce numerical simulations and figures from the [preprint](https://doi.org/10.1101/2021.05.11.443611):
 
-Designing single-cell experiments to harvest fluctuation information while rejecting measurement noise
+_Designing single-cell experiments to harvest fluctuation information while rejecting measurement noise_
 Huy D. Vo, Brian Munsky
 bioRxiv 2021.05.11.443611; doi: https://doi.org/10.1101/2021.05.11.443611
 
