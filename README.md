@@ -20,7 +20,7 @@ The dependency PACMENSL is a C++ library for parallel FSP solution of the chemic
 
 ## Setting up environment to reproduce figures
 ### Downloading the numerical results
-Readers who do not wish to repeat the time-consuming calculations (which requires installing the C++ dependencies and may require cluster access) may simply [download](https://zenodo.org/record/6354728/files/zenodo_upload.zip?download=1) the numerical results from Zenodo. A convinient Python script ,`download_results.py`, is provided in the root folder that will download the Zip file, unpack, and populate the subfolders of the repository with `.npz` and `.png` files needed for plotting.
+Readers who do not wish to repeat the time-consuming calculations (which requires installing the C++ dependencies and may require cluster access) may simply [download](https://zenodo.org/record/6354728/files/zenodo_upload.zip?download=1) the numerical results from Zenodo. A convenient Python script (`download_results.py`) is provided in the root folder that will download the Zip file, unpack, and populate the subfolders of the repository with `.npz` and `.png` files needed for plotting.
 
 ### Setting up Python environment
 This step requires that [Anaconda](https://www.anaconda.com/) is installed on the reader's computer. An environment file `environment.yml` is provided in the root folder of this repository. Readers can use Anaconda to set up the Python environment for executing the notebooks by running the following command in Terminal:
