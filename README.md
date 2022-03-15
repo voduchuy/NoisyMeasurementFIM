@@ -37,4 +37,8 @@ Provided that the numerical outputs have been downloaded and the files are copie
 ### Executing the Jupyter notebooks
 After the environment has been created and activated, user can run `jupyter notebook` from the Terminal, change dir to one of the subfolders `bursting_gene`, `toggle_switch`, `yeast`. A single Jupyter notebook is provided in each subfolder that produce all figures related to the corresponding CME (telegraph, 2-D toggle switch, or compartmental MAPK-activated gene expression). 
 
-
+### Cleaning up
+The Anaconda environment can be removed with
+```
+conda env remove -n fimhuyvo2022
+```
