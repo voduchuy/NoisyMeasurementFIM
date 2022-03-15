@@ -16,7 +16,7 @@ For plotting the numerial results:
 - Matplotlib.
 - Pandas.
 
-The dependency PACMENSL is a C++ library for parallel FSP solution of the chemical master equation. Follow the steps in the README file of that repository to compile the library. We note that it is only needed if the reader wishes to repeat the computation scripts. If the reader only wants to inspect the numerical results and reproduce the figures in the manuscript, only Python packages are needed. We provide convinient scripts and configuration files to set up a Python environment quickly for plotting the results (see below).
+The dependency PACMENSL is a C++ library for parallel FSP solution of the chemical master equation. Follow the steps in the README file of that repository to compile the library. We note that it is only needed if the reader wishes to repeat the computation scripts. If the reader only wants to inspect the numerical results and reproduce the figures in the manuscript, only Python packages are needed. We provide convenient scripts and configuration files to set up a Python environment quickly for plotting the results (see below).
 
 ## Setting up environment to reproduce figures
 ### Downloading the numerical results
