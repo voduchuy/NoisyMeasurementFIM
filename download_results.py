@@ -1,6 +1,7 @@
 from pathlib import Path
 import zipfile
 import shutil
+import os
 import wget
 # URL to Zenodo upload
 url = "https://zenodo.org/record/6354728/files/zenodo_upload.zip?download=1"
@@ -8,13 +9,13 @@ url = "https://zenodo.org/record/6354728/files/zenodo_upload.zip?download=1"
 # Uncomment for testing
 # dest = Path("./zenodo_download")
 # Uncomment for unpacking directly to the local repository
-dest = "./"
+dest = Path("./")
 if not dest.exists():
     dest.mkdir()
 #%% Download results from Zenodo
 wget.download(url=url)
 #%% Upzip the downloaded file into a folder "zenodo_upload" in the cwd
-with zipfile.ZipFile("./numerical_results.zip", "r") as zf:
+with zipfile.ZipFile("./zenodo_upload.zip", "r") as zf:
     for file in zf.infolist():
         if file.filename.startswith("zenodo_upload"):
             zf.extract(file)
@@ -32,8 +33,10 @@ for example in ["bursting_gene", "toggle_switch", "yeast"]:
     shutil.copytree(unpacked_loc.joinpath(example).joinpath("results/"), dest.joinpath(example).joinpath("results/"), dirs_exist_ok=True)
     shutil.copytree(unpacked_loc.joinpath(example).joinpath("figs/"), dest.joinpath(example).joinpath("figs"), dirs_exist_ok=True)
 #%%
+
 shutil.rmtree(unpacked_loc)
-shutil.rm("./numerical_results.zip")
+os.remove("zenodo_upload.zip")
+
 
 
 
