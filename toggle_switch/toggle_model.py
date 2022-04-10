@@ -19,7 +19,8 @@ class ToggleSwitchModel:
     X0 = [[0, 0]]
     P0 = [1.0]
     S0 = [0.0]
-    NUM_PARAMETERS = 10
+    NUM_PARAMETERS = 8
+    # NUM_PARAMETERS = 10
     init_bounds = np.array([5, 5])
 
     stoichMatrix = [[1, 0], [-1, 0], [0, 1], [0, -1]]
@@ -112,25 +113,25 @@ class ToggleSwitchModel:
                 out[:] = 0.0
             return None
 
-        def dpropx_dnyx(reaction, X, out):
-            if reaction == 0:
-                out[:] = (
-                    -self.kx*(self.nyx * self.ayx * X[:, 1] ** (self.nyx - 1.0))
-                    * (1.0 + self.ayx * X[:, 1] ** self.nyx) ** (-2.0)
-                )
-            else:
-                out[:] = 0.0
-            return None
-
-        def dpropx_dnxy(reaction, X, out):
-            if reaction == 2:
-                out[:] = (
-                    -self.ky*(self.nxy * X[:, 0] ** (self.nxy - 1.0))
-                    * (1.0 + self.axy * X[:, 0] ** self.nxy) ** (-2.0)
-                )
-            else:
-                out[:] = 0.0
-            return None
+        # def dpropx_dnyx(reaction, X, out):
+        #     if reaction == 0:
+        #         out[:] = (
+        #             -self.kx*(self.nyx * self.ayx * X[:, 1] ** (self.nyx - 1.0))
+        #             * (1.0 + self.ayx * X[:, 1] ** self.nyx) ** (-2.0)
+        #         )
+        #     else:
+        #         out[:] = 0.0
+        #     return None
+        #
+        # def dpropx_dnxy(reaction, X, out):
+        #     if reaction == 2:
+        #         out[:] = (
+        #             -self.ky*(self.nxy * X[:, 0] ** (self.nxy - 1.0))
+        #             * (1.0 + self.axy * X[:, 0] ** self.nxy) ** (-2.0)
+        #         )
+        #     else:
+        #         out[:] = 0.0
+        #     return None
 
         def dpropx_dgx(reaction, X, out):
             if reaction == 1:
@@ -149,14 +150,16 @@ class ToggleSwitchModel:
             dpropx_dky,
             dpropx_dayx,
             dpropx_daxy,
-            dpropx_dnyx,
-            dpropx_dnxy,
+            # dpropx_dnyx,
+            # dpropx_dnxy,
             dpropx_dgx,
             dpropx_dgy
         ]
 
         self.dpropx_sparsity = \
-            [ [0], [2], [0], [2], [0], [2], [0], [2], [1], [3]]
+            [ [0], [2], [0], [2], [0], [2], \
+              # [0], [2],
+              [1], [3]]
 
 
         def dpropx(parameter_idx: int, reaction: int, x: np.ndarray, out: np.ndarray)->None:

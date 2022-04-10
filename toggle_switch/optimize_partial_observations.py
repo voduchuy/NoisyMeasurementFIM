@@ -12,8 +12,8 @@ theta = np.array([model.bx,
                 model.ky,
                 model.ayx,
                 model.axy,
-                model.nyx,
-                model.nxy,
+                # model.nyx,
+                # model.nxy,
                 model.gammax,
                 model.gammay])
 fims = {}
