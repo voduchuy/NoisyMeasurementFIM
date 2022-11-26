@@ -78,4 +78,5 @@ def labelAxes(axs: [plt.Axes]):
     else:
         axlist = axs
     for i, ax in enumerate(axlist):
-        ax.set_title(ascii_uppercase[i])
+        ax.annotate(f"({ascii_uppercase[i]})", xy=(0, 1.2), xycoords="axes fraction",)
+        # ax.set_title(f"{ascii_uppercase[i]}    ", loc="left", pad=1.0)
