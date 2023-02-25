@@ -125,10 +125,10 @@ class ToggleSwitchModel:
 
         def dpropx_dnxy(reaction, X, out):
             if reaction == 2:
-                out[X[:,0] == 0] = 0.0
-                out[X[:,0] != 0] = (
-                    -self.ky*(self.nxy * X[X[:,0] != 0, 0] ** self.nxy * np.log(X[X[:,0] != 0, 0]))
-                    * (1.0 + self.axy * X[X[:,0] != 0, 0] ** self.nxy) ** (-2.0)
+                out[X[:, 0] == 0] = 0.0
+                out[X[:, 0] != 0] = (
+                    -self.ky*(self.nxy * X[X[:, 0] != 0, 0] ** self.nxy * np.log(X[X[:, 0] != 0, 0]))
+                    * (1.0 + self.axy * X[X[:, 0] != 0, 0] ** self.nxy) ** (-2.0)
                 )
             else:
                 out[:] = 0.0
@@ -161,7 +161,6 @@ class ToggleSwitchModel:
             [ [0], [2], [0], [2], [0], [2], \
               [0], [2],
               [1], [3]]
-
 
         def dpropx(parameter_idx: int, reaction: int, x: np.ndarray, out: np.ndarray)->None:
             return self.dpropx_list[parameter_idx](reaction, x, out)

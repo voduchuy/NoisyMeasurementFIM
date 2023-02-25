@@ -26,8 +26,8 @@ fim_single_cell = dict()
 for s in [
     "exact",
     "binomial",
-    "poisson",
-    "binomial_poisson",
+    "poisson_noise",
+    "poisson_observation",
     "flowcyt",
     "binomial_state_dep",
 ]:
