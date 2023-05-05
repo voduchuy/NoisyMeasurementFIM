@@ -8,6 +8,7 @@ RNG = default_rng()
 #%% Binomial model
 from scipy.stats import binom
 
+
 class BinomialDistortionModel(DistortionModel):
     def __init__(self, detectionRate: float = 0.5):
         super().__init__()
@@ -28,6 +29,8 @@ class BinomialVaryingDetectionRate(DistortionModel):
     def distort(self, x: np.ndarray, rng: Generator = default_rng())->np.ndarray:
         detectionRates = 1.0/(1.0 + 0.01*x)
         return rng.binomial(n=x, p=detectionRates)
+
+
 #%% Binning with uniform bin widths
 class UniformBinning(DistortionModel):
     def __init__(self, width=10):
@@ -36,8 +39,11 @@ class UniformBinning(DistortionModel):
 
     def getConditionalProbabilities(self, x: int, y: np.ndarray) -> np.ndarray:
         return np.array((y*self.width <= x) & ((y+1)*self.width > x), dtype=np.double)
+
+
 #%% Additive Poisson Noise
 from scipy.stats import poisson
+
 
 class AdditivePoissonDistortionModel(DistortionModel):
     def __init__(self, poissonRate: float = 10.0):
@@ -46,6 +52,19 @@ class AdditivePoissonDistortionModel(DistortionModel):
 
     def getConditionalProbabilities(self, x: int, y: np.ndarray) -> np.ndarray:
         return poisson.pmf(y - x, self.rate)
+
+
+#%% Poisson observation model
+class PoissonObservationModel(DistortionModel):
+    def __init__(self, lambda0: float = -40, lambda1: float = 0.75):
+        super().__init__()
+        self.lambda0 = lambda0
+        self.lambda1 = lambda1
+
+    def getConditionalProbabilities(self, x: int, y: np.ndarray) -> np.ndarray:
+        return poisson.pmf(y, np.maximum(self.lambda0 + self.lambda1*x, 1e-7))
+
+
 #%% Integrated intensity measurement
 class IntegratedIntensityModel(DistortionModel):
     def __init__(
@@ -55,6 +74,7 @@ class IntegratedIntensityModel(DistortionModel):
         mu_bg: float = 200,
         sigma_bg: float = 400,
     ):
+        super().__init__()
         self.mu_probe = mu_probe
         self.sigma_probe = sigma_probe
         self.mu_bg = mu_bg

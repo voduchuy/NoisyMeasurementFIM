@@ -4,7 +4,7 @@ import shutil
 import os
 import wget
 # URL to Zenodo upload
-url = "https://zenodo.org/record/6354728/files/zenodo_upload.zip?download=1"
+url = "https://zenodo.org/record/7880494/files/zenodo_upload.zip?download=1"
 # Destination folder to unpack the files
 # Uncomment for testing
 # dest = Path("./zenodo_download")
@@ -31,9 +31,9 @@ for example in ["bursting_gene", "toggle_switch", "yeast"]:
 
     # Copy all files from the unpacked folder to the destination
     shutil.copytree(unpacked_loc.joinpath(example).joinpath("results/"), dest.joinpath(example).joinpath("results/"), dirs_exist_ok=True)
-    shutil.copytree(unpacked_loc.joinpath(example).joinpath("figs/"), dest.joinpath(example).joinpath("figs"), dirs_exist_ok=True)
+    if unpacked_loc.joinpath(example).joinpath("figs/").exists():
+        shutil.copytree(unpacked_loc.joinpath(example).joinpath("figs/"), dest.joinpath(example).joinpath("figs"), dirs_exist_ok=True)
 #%%
-
 shutil.rmtree(unpacked_loc)
 os.remove("zenodo_upload.zip")
 

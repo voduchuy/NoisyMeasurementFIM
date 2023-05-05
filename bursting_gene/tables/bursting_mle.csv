@@ -1,0 +1,5 @@
+Parameter,True Value,Corrected Fits,Uncorrected Fits,Corrected relRMSE,Uncorrected relRMSE
+$\log_{10}(k_{OFF})$,-1.30e+00,-1.30e+00 ( 1.02e-02),-1.27e+00 ( 1.15e-02), 7.87e-03, 2.83e-02
+$\log_{10}(k_{ON})$,-1.82e+00,-1.82e+00 ( 2.16e-02),-2.07e+00 ( 2.30e-02), 1.18e-02, 1.37e-01
+$\log_{10}(k_r)$, 6.99e-01, 6.98e-01 ( 8.73e-03), 5.26e-01 ( 9.19e-03), 1.25e-02, 2.48e-01
+$\log_{10}(\gamma)$,-1.30e+00,-1.30e+00 ( 1.06e-02),-1.15e+00 ( 1.00e-02), 8.18e-03, 1.14e-01
